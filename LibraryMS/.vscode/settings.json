@@ -1,0 +1,6 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.debug.settings.console": "internalConsole",
+    "java.errors.incompleteClasspath.severity": "ignore"
+}

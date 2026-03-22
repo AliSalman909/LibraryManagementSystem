@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "type": "java",
+            "name": "LibraryApplication (Spring Boot)",
+            "request": "launch",
+            "mainClass": "com.library.LibraryApplication",
+            "projectName": "library-management",
+            "console": "internalConsole"
+        }
+    ]
+}
