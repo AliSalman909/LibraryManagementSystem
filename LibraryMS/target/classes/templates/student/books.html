@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Search Books — Student')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/student/dashboard}">Student</a>
+        <span aria-hidden="true"> / </span>
+        <span>Search books</span>
+    </nav>
+
+    <div th:if="${flashSuccess}" class="alert alert-success" role="status" th:text="${flashSuccess}">Saved</div>
+    <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Catalog</p>
+        <h1>Search books</h1>
+        <p class="lede">Find books by title, author, category, or ISBN, then submit a borrow request.</p>
+
+        <form class="status-inline-form" th:action="@{/student/books}" method="get">
+            <input class="input" type="text" name="q" th:value="${query}" placeholder="Search by title, author, category, ISBN"/>
+            <button type="submit" class="btn btn-outline">Search</button>
+            <a class="btn btn-ghost" th:href="@{/student/books}">Clear</a>
+        </form>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Available</th>
+                    <th class="actions-cell">Borrow</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(books)}">
+                    <td colspan="5" class="empty-state">No books found for this query.</td>
+                </tr>
+                <tr th:each="book : ${books}">
+                    <td th:text="${book.title}">Title</td>
+                    <td th:text="${book.author}">Author</td>
+                    <td th:text="${book.category != null ? book.category : '—'}">—</td>
+                    <td>
+                        <span th:text="${book.availableCopies}">0</span>/<span th:text="${book.totalCopies}">0</span>
+                    </td>
+                    <td class="actions-cell">
+                        <form class="status-inline-form" th:action="@{/student/books/request}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="bookId" th:value="${book.bookId}"/>
+                            <select class="input input-sm" name="durationDays">
+                                <option value="14" selected>14 days (default)</option>
+                                <option value="7">7 days</option>
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm" th:disabled="${book.availableCopies == 0}">
+                                Request
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

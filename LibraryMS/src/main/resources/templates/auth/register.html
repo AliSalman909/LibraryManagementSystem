@@ -120,7 +120,12 @@
                 <legend>Student details</legend>
                 <div class="field">
                     <label for="program">Program</label>
-                    <input id="program" th:field="*{program}" class="input" type="text" maxlength="100"/>
+                    <select id="program" th:field="*{program}" class="input">
+                        <option value="">Select program…</option>
+                        <option th:each="programName : ${studentPrograms}"
+                                th:value="${programName}"
+                                th:text="${programName}">Computer Science</option>
+                    </select>
                     <p class="field-error" th:if="${#fields.hasErrors('program')}" th:errors="*{program}"></p>
                 </div>
                 <div class="responsive-two">

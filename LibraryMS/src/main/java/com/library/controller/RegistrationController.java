@@ -26,6 +26,7 @@ import jakarta.persistence.PersistenceException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Locale;
 
 @Controller
@@ -49,6 +50,11 @@ public class RegistrationController {
     @ModelAttribute("roles")
     public UserRole[] roles() {
         return UserRole.values();
+    }
+
+    @ModelAttribute("studentPrograms")
+    public List<String> studentPrograms() {
+        return RegistrationForm.ALLOWED_STUDENT_PROGRAMS.stream().sorted().toList();
     }
 
     @ModelAttribute("maxProfilePictureBytes")

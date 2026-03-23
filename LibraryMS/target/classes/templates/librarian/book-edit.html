@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Edit Book — Librarian')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/librarian/dashboard}">Librarian</a>
+        <span aria-hidden="true"> / </span>
+        <a th:href="@{/librarian/books}">Book management</a>
+        <span aria-hidden="true"> / </span>
+        <span>Edit</span>
+    </nav>
+
+    <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
+
+    <section class="dashboard-hero card-elevated">
+        <h1>Edit book</h1>
+        <form class="stack-form" th:action="@{/librarian/books/{id}/edit(id=${bookId})}" th:object="${bookForm}" method="post" novalidate>
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div class="responsive-two">
+                <div class="field">
+                    <label for="title">Title</label>
+                    <input id="title" class="input" type="text" th:field="*{title}" required/>
+                    <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Invalid title</p>
+                </div>
+                <div class="field">
+                    <label for="author">Author</label>
+                    <input id="author" class="input" type="text" th:field="*{author}" required/>
+                    <p class="field-error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">Invalid author</p>
+                </div>
+                <div class="field">
+                    <label for="category">Category</label>
+                    <input id="category" class="input input-readonly" type="text" th:field="*{category}" readonly aria-readonly="true"/>
+                    <p class="field-hint">Category is locked because copy ISBN codes are generated from title + category.</p>
+                    <p class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}">Invalid category</p>
+                </div>
+                <div class="field">
+                    <label for="totalCopies">Total copies</label>
+                    <input id="totalCopies" class="input" type="number" th:field="*{totalCopies}" min="1" required/>
+                    <p class="field-error" th:if="${#fields.hasErrors('totalCopies')}" th:errors="*{totalCopies}">Invalid quantity</p>
+                </div>
+            </div>
+            <div class="dashboard-actions">
+                <button type="submit" class="btn btn-primary">Save changes</button>
+                <a class="btn btn-outline" th:href="@{/librarian/books}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

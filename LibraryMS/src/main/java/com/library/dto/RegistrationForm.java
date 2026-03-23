@@ -8,8 +8,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.Set;
 
 public class RegistrationForm {
+    public static final Set<String> ALLOWED_STUDENT_PROGRAMS =
+            Set.of("Computer Science", "Data Science", "AI", "Software Engineering", "Cyber Security");
 
     @NotBlank(message = "Please enter your full name.")
     @Size(max = 100, message = "Full name is too long (100 characters maximum).")
@@ -58,7 +61,7 @@ public class RegistrationForm {
         if (role != UserRole.STUDENT) {
             return true;
         }
-        return program != null && !program.isBlank();
+        return program != null && ALLOWED_STUDENT_PROGRAMS.contains(program);
     }
 
     @AssertTrue(message = "Please check your librarian registration details and try again.")

@@ -21,6 +21,12 @@ public class Librarian {
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", columnDefinition = "VARCHAR(512)")
     private User user;
 
+    /**
+     * Legacy schema compatibility: older databases require this column as NOT NULL.
+     */
+    @Column(name = "employee_id", nullable = false, length = 64)
+    private String employeeId;
+
     @Column(name = "can_approve_borrowing", nullable = false)
     private boolean canApproveBorrowing = true;
 
@@ -38,6 +44,14 @@ public class Librarian {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 
     public boolean isCanApproveBorrowing() {

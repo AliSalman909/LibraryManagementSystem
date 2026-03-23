@@ -28,6 +28,12 @@ public class AdminProfile {
     @Column(length = 100)
     private String department;
 
+    /**
+     * Legacy schema compatibility: older databases require this column as NOT NULL.
+     */
+    @Column(name = "employee_id", nullable = false, length = 64)
+    private String employeeId;
+
     @Column(name = "can_manage_users", nullable = false)
     private boolean canManageUsers = true;
 
@@ -59,6 +65,14 @@ public class AdminProfile {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 
     public boolean isCanManageUsers() {

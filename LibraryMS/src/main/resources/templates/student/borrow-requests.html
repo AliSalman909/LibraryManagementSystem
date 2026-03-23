@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='My Borrow Requests — Student')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/student/dashboard}">Student</a>
+        <span aria-hidden="true"> / </span>
+        <span>My borrow requests</span>
+    </nav>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Requests</p>
+        <h1>My borrow requests</h1>
+        <p class="lede">Track approval status and due dates for all your requests.</p>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Status</th>
+                    <th>Requested duration</th>
+                    <th>Requested at</th>
+                    <th>Due date</th>
+                    <th>Overdue</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(requests)}">
+                    <td colspan="6" class="empty-state">No borrow requests yet.</td>
+                </tr>
+                <tr th:each="request : ${requests}">
+                    <td th:text="${request.book.title}">Title</td>
+                    <td>
+                        <span class="role-pill" th:text="${request.status}">PENDING</span>
+                    </td>
+                    <td th:text="${request.requestedDurationDays + ' days'}">14 days</td>
+                    <td th:text="${#temporals.format(request.requestedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+                    <td th:text="${request.dueDate != null ? request.dueDate : '—'}">—</td>
+                    <td th:with="overdue=${request.dueDate != null and request.status.name() == 'APPROVED' and request.dueDate.isBefore(T(java.time.LocalDate).now())}">
+                        <span th:if="${overdue}" class="alert alert-error">Overdue</span>
+                        <span th:if="${!overdue}" class="muted-note">No</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

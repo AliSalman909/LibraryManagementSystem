@@ -185,8 +185,9 @@ public class RegistrationService {
     }
 
     private void validateStudent(RegistrationForm form) {
-        if (!StringUtils.hasText(form.getProgram())) {
-            throw new BusinessRuleException("Please enter your study program.");
+        if (!StringUtils.hasText(form.getProgram())
+                || !RegistrationForm.ALLOWED_STUDENT_PROGRAMS.contains(form.getProgram())) {
+            throw new BusinessRuleException("Please select a valid study program.");
         }
     }
 
@@ -205,6 +206,8 @@ public class RegistrationService {
     private void persistStudent(User user, RegistrationForm form) {
         Student s = new Student();
         s.setUser(user);
+        // Required by legacy schemas that still enforce a NOT NULL students.student_id column.
+        s.setStudentId("S-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
         s.setProgram(form.getProgram().trim());
         s.setEnrollmentDate(form.getEnrollmentDate());
         s.setDateOfBirth(form.getDateOfBirth());
@@ -216,6 +219,7 @@ public class RegistrationService {
     private void persistLibrarian(User user) {
         Librarian l = new Librarian();
         l.setUser(user);
+        l.setEmployeeId("L-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
         l.setCanApproveBorrowing(true);
         librarianRepository.save(l);
     }
@@ -224,6 +228,7 @@ public class RegistrationService {
         AdminProfile a = new AdminProfile();
         a.setUser(user);
         a.setDepartment(StringUtils.hasText(form.getDepartment()) ? form.getDepartment().trim() : null);
+        a.setEmployeeId("A-" + UUID.randomUUID().toString().substring(0, 12).toUpperCase());
         a.setCanManageUsers(true);
         a.setCanViewReports(true);
         a.setCanManageCatalog(true);

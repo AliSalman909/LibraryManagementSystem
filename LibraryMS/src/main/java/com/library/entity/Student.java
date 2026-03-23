@@ -17,6 +17,13 @@ public class Student {
     @Id
     private String userId;
 
+    /**
+     * Backward-compatible legacy column still present in existing databases.
+     * Not used by application logic, but required for inserts on older schemas.
+     */
+    @Column(name = "student_id", nullable = false, length = 64)
+    private String studentId;
+
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", columnDefinition = "VARCHAR(512)")
@@ -43,6 +50,14 @@ public class Student {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
     }
 
     public User getUser() {
