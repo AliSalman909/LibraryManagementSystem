@@ -1,70 +1,113 @@
-# Library Management System — Authentication Module
+# Library Management System — Web app (auth, registration, admin)
 
-Spring Boot 3.2 (Java 17) application with session-based login, BCrypt passwords, role-based dashboards, and a registration flow aligned with the `library_db` schema.
+Spring Boot **3.5.x** (Java **17**) application: session-based login, role-based dashboards (admin, librarian, student), self-service registration with optional profile photo, admin review of pending accounts, and an admin **user accounts** console (status changes, suspend/activate, hard delete, re-approve rejected accounts).
+
+Stack: Spring MVC, Thymeleaf, Spring Security, Spring Data JPA, MySQL.
 
 ## Prerequisites
 
-- JDK 17+
-- Maven 3.9+
-- MySQL 8+ with database `library_db` and tables from `docs/library_db_schema.sql` (recommended)
+- **JDK 17+**
+- **Maven 3.9+** (or use your IDE’s Maven integration)
+- **MySQL 8+** — create database `library_db` and apply **`docs/library_db_schema.sql`**
 
 ## Configuration
 
-Edit `src/main/resources/application.properties`:
+Edit `src/main/resources/application.properties` (or override with a Spring profile / environment variables in deployment):
 
-- `spring.datasource.username` / `spring.datasource.password` for your MySQL user
-- `spring.datasource.url` if MySQL is not on `localhost:3306`
+| Area | Properties |
+|------|------------|
+| MySQL | `spring.datasource.url`, `spring.datasource.username`, `spring.datasource.password` |
+| Hibernate | `spring.jpa.hibernate.ddl-auto` — `update` is convenient in dev; for production prefer `validate` or `none` and manage schema with SQL or migrations |
+| Secrets | **`app.security.password-secret`** — at least 16 characters; used for **AES-256-GCM** storage of new passwords and for legacy user-id decryption key material. Change for any real deployment and keep it secret |
+| Legacy user IDs | Optional **`app.security.user-id-secret`** — only if old rows used `U1:`-prefixed encrypted user ids |
+| HTTP port | **`server.port=0`** picks a random free port locally; set a fixed port (e.g. `8080`) when you need a stable URL |
+| Browser | **`app.browser.open-on-start`** — `true` opens the home page when the app is ready; set `false` for production, CI, or headless servers |
+| Uploads | **`app.upload.dir`**, `spring.servlet.multipart.max-file-size` — profile pictures are stored on disk and served under `/uploads/profiles/**` |
 
-`spring.jpa.hibernate.ddl-auto` is set in `application.properties` (e.g. `update` in dev). For production, prefer `validate` or `none` and manage schema with `library_db_schema.sql` / migrations.
+**Security note:** Do not commit real database passwords or production secrets. Use local-only overrides or environment-specific configuration.
+
+### Password storage (important)
+
+- **New registrations** store passwords with **reversible AES-256-GCM** (`PasswordEncryptionService`), so an administrator can view plaintext in the user-accounts UI (lab-oriented behavior).
+- **Legacy rows** may still use **BCrypt** (`$2a$…`); login supports both formats.
 
 ## Run
 
+From this directory (`LibraryMS`):
+
 ```bash
-cd C:\Users\CodeTech\Desktop\LibraryMS
 mvn spring-boot:run
 ```
 
-Run the app, then open the URL shown in the console (Spring Boot chooses a free port). Debug mode will auto-open the correct URL in your browser.
+On Windows (PowerShell), from the repo root:
 
-## First administrator (optional)
+```powershell
+cd LibraryMS
+mvn spring-boot:run
+```
 
-There is no seed SQL in this repo. Typical approach: register an account through the app, then in MySQL set `users.user_role = 'ADMIN'`, `users.account_status = 'active'`, and insert a matching row into `admins` with the same `user_id` (must be the 6-character id the app assigned). Alternatively, run `UPDATE`-only steps similar to the section below after registering.
+Open the URL logged by Spring Boot (with `server.port=0`, the chosen port appears in the console). If `app.browser.open-on-start=true`, a browser may open automatically.
 
-## Approve registrations (admin UI)
+## First administrator
 
-Sign in as an **active** admin, open **Admin dashboard** → **Review pending registrations** (`/admin/registrations/pending`). **Approve** sets `users.account_status` to `active`, marks the request `approved`, and inserts an `account_approved` notification. **Reject** sets `account_status` to `rejected`, stores an optional reason, and notifies with `account_rejected`.
+- **Bootstrap:** If the `admins` table is **empty**, a single **Admin** registration is allowed through **`/register`**. That account is created **active** immediately and does not wait for approval. Further self-service **Admin** sign-ups are blocked.
+- **Promoting via SQL (alternative):** Register through the app, then in MySQL align `users` and `admins` for the same `user_id` (the **6-character** id shown at registration), set `users.user_role = 'ADMIN'`, `users.account_status = 'active'`, and insert the matching `admins` row.
 
-## Activate a registered user (SQL alternative)
+## Registration and approval
 
-After self-registration, `account_status` is `pending`, so login is blocked until activation:
+1. Users register at **`/register`** (role, profile fields, optional profile image and focal point).
+2. Non-admin registrations start as **`pending`**; login is blocked until approved.
+3. An active **Admin** opens **`/admin/registrations/pending`**: **Approve** activates the account and records notifications; **Reject** can store a reason and notifies the user.
+
+**SQL-only activation** (if you skip the admin UI):
 
 ```sql
 UPDATE users SET account_status = 'active' WHERE email = 'you@example.com';
--- optional consistency:
 UPDATE registration_requests rr
 JOIN users u ON u.user_id = rr.user_id
-SET rr.status = 'approved', rr.reviewed_at = CURRENT_TIMESTAMP
+SET rr.status = 'approved', rr.reviewed_at = CURRENT_TIMESTAMP(6)
 WHERE u.email = 'you@example.com';
 ```
 
-## Roles and URLs
+## Admin user accounts
 
-| Role      | After login        |
-|-----------|--------------------|
-| `ADMIN`   | `/admin/dashboard` |
+**`/admin/users`** (Manage user accounts): list all users with decrypted password for AES-stored accounts (lab use), plain **6-character user id**, registration metadata, and actions:
+
+- Set **`account_status`** (e.g. suspended)
+- **Suspend** / **activate**
+- **Approve** a previously **rejected** account again
+- **Hard delete** user and related rows (where business rules allow)
+
+## Roles and main URLs
+
+| Role | After login |
+|------|-------------|
+| `ADMIN` | `/admin/dashboard` |
 | `LIBRARIAN` | `/librarian/dashboard` |
 | `STUDENT` | `/student/dashboard` |
 
-Public: `/`, `/login`, `/register`, static assets, `/error`, `/access-denied`.  
-Admin-only: `/admin/registrations/pending` (and POST approve/reject under `/admin/registrations/...`).
+**Public:** `/`, `/login`, `/register`, `/register/complete`, static assets under `/css/**`, `/js/**`, `/images/**`, `/error`, `/access-denied`.
+
+**Authenticated:** `/uploads/profiles/**` (profile images).
+
+**Admin-only:** `/admin/**` (dashboard, `/admin/registrations/pending`, `/admin/users`, POST handlers for approve/reject and user actions).
+
+**Librarian-only:** `/librarian/**`  
+**Student-only:** `/student/**`
+
+Logout: **`POST /logout`** (form in the UI) → redirects to `/login?logout`.
 
 ## Package layout
 
 - `com.library.controller` — MVC controllers  
-- `com.library.service` — registration and user services  
+- `com.library.service` — registration, approval, admin user operations, profile picture storage  
 - `com.library.repository` — Spring Data JPA  
-- `com.library.entity` — JPA mappings for your schema  
-- `com.library.dto` — registration form DTO + validation  
-- `com.library.security` — custom authentication provider, handlers, `UserDetails`  
-- `com.library.config` — `SecurityConfig`  
+- `com.library.entity` — JPA entities aligned with `library_db`  
+- `com.library.dto` — form DTOs and admin views  
+- `com.library.security` — authentication provider, login handlers, password/user-id helpers, `UserDetails`  
+- `com.library.config` — `SecurityConfig`, `WebConfig`, `BrowserLauncher`  
 - `com.library.exception` — global error handling  
+
+## Database notes
+
+The schema in **`docs/library_db_schema.sql`** includes tables such as **`deletion_requests`** that are not yet exposed by dedicated controllers in this codebase; related enums and services may be used indirectly (for example when cleaning up on delete). Extend the app against that schema as you add features.

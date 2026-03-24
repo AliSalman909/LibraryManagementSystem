@@ -1,0 +1,18 @@
+# Maven
+target/
+**/target/
+
+# IDE / OS
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+Thumbs.db
+.DS_Store
+
+# Local uploads (default app.upload.dir)
+uploads/
+
+# Logs
+*.log
