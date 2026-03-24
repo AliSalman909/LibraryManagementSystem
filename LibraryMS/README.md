@@ -6,7 +6,7 @@ Spring Boot 3.2 (Java 17) application with session-based login, BCrypt passwords
 
 - JDK 17+
 - Maven 3.9+
-- MySQL 8+ with database `library_db` created and tables created using your provided SQL script
+- MySQL 8+ with database `library_db` and tables from `docs/library_db_schema.sql` (recommended)
 
 ## Configuration
 
@@ -15,7 +15,7 @@ Edit `src/main/resources/application.properties`:
 - `spring.datasource.username` / `spring.datasource.password` for your MySQL user
 - `spring.datasource.url` if MySQL is not on `localhost:3306`
 
-`spring.jpa.hibernate.ddl-auto=validate` expects the database to match the entities (same tables and columns as your schema).
+`spring.jpa.hibernate.ddl-auto` is set in `application.properties` (e.g. `update` in dev). For production, prefer `validate` or `none` and manage schema with `library_db_schema.sql` / migrations.
 
 ## Run
 
@@ -26,9 +26,9 @@ mvn spring-boot:run
 
 Run the app, then open the URL shown in the console (Spring Boot chooses a free port). Debug mode will auto-open the correct URL in your browser.
 
-## Bootstrap admin (optional)
+## First administrator (optional)
 
-See `docs/seed-admin.sql` for a ready-made **active** administrator using password `password` (BCrypt hash included). Run it in MySQL after creating tables, then adjust the email or hash for production.
+There is no seed SQL in this repo. Typical approach: register an account through the app, then in MySQL set `users.user_role = 'ADMIN'`, `users.account_status = 'active'`, and insert a matching row into `admins` with the same `user_id` (must be the 6-character id the app assigned). Alternatively, run `UPDATE`-only steps similar to the section below after registering.
 
 ## Approve registrations (admin UI)
 
