@@ -49,6 +49,7 @@ public class BookService {
         return bookRepository.searchByTitleAndAuthor(normalizedTitle, normalizedAuthor);
     }
 
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public Book findByIdOrThrow(String bookId) {
         return bookRepository.findById(bookId).orElseThrow(() -> new BusinessRuleException("Book not found."));

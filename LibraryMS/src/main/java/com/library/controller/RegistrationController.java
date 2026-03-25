@@ -88,6 +88,7 @@ public class RegistrationController {
         return "auth/registration-complete";
     }
 
+    @SuppressWarnings("null")
     @PostMapping("/register")
     public String register(
             HttpServletRequest request,

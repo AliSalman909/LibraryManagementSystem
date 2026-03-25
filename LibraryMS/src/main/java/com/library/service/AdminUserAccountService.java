@@ -167,6 +167,7 @@ public class AdminUserAccountService {
     /**
      * Permanently removes the user row and dependent records. Not allowed for {@link UserRole#ADMIN}.
      */
+    @SuppressWarnings("null")
     @Transactional
     public void hardDeleteUser(String storedUserId) {
         User user = loadManagedUser(storedUserId);
@@ -181,6 +182,7 @@ public class AdminUserAccountService {
         userRepository.deleteById(uid);
     }
 
+    @SuppressWarnings("null")
     private User loadManagedUser(String userId) {
         return userRepository
                 .findById(userId)
@@ -197,6 +199,7 @@ public class AdminUserAccountService {
         }
     }
 
+    @SuppressWarnings("null")
     private void notify(User recipient, String adminUserId, NotificationType type, String title, String message) {
         Notification n = new Notification();
         n.setNotificationId(UUID.randomUUID().toString());

@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head (title='User accounts — Admin')}"></head>
 <body class="page-dashboard">
 <header th:replace="~{fragments/layout :: site-header}"></header>
-<main class="container dashboard-main">
+<main class="container dashboard-main dashboard-main-wide user-accounts-main-wide">
     <nav class="breadcrumb" aria-label="Breadcrumb">
         <a th:href="@{/admin/dashboard}">Admin</a>
         <span aria-hidden="true"> / </span>
@@ -45,9 +45,11 @@
                     <td th:text="${u.accountStatus}">active</td>
                     <td th:text="${row.registrationRequestStatus != null ? row.registrationRequestStatus : '—'}">approved</td>
                     <td>
-                        <time th:if="${row.registrationReviewedAt != null}"
-                              th:datetime="${row.registrationReviewedAt}"
-                              th:text="${row.registrationReviewedAt}">—</time>
+                        <time th:if="${row.registrationReviewedAt != null}" th:datetime="${row.registrationReviewedAt}">
+                            <span th:text="${#temporals.format(row.registrationReviewedAt, 'yyyy-MM-dd')}">2026-01-01</span>
+                            <span class="date-time-gap" aria-hidden="true"></span>
+                            <span th:text="${#temporals.format(row.registrationReviewedAt, 'HH:mm:ss')}">12:30:45</span>
+                        </time>
                         <span th:if="${row.registrationReviewedAt == null}" class="muted-note">—</span>
                     </td>
                     <td class="review-notes-cell">
@@ -67,9 +69,21 @@
                     <td th:text="${u.phoneNumber != null ? u.phoneNumber : '—'}">—</td>
                     <td class="cell-mono profile-path-cell" th:text="${u.profilePicture != null ? u.profilePicture : '—'}">—</td>
                     <td class="plain-password-cell" th:text="${row.passwordPlainText}">password</td>
-                    <td><time th:datetime="${u.createdAt}" th:text="${u.createdAt}">—</time></td>
-                    <td><time th:if="${u.lastLoginAt != null}" th:datetime="${u.lastLoginAt}"
-                            th:text="${u.lastLoginAt}">—</time><span th:if="${u.lastLoginAt == null}">—</span></td>
+                    <td>
+                        <time th:datetime="${u.createdAt}">
+                            <span th:text="${#temporals.format(u.createdAt, 'yyyy-MM-dd')}">2026-01-01</span>
+                            <span class="date-time-gap" aria-hidden="true"></span>
+                            <span th:text="${#temporals.format(u.createdAt, 'HH:mm:ss')}">12:30:45</span>
+                        </time>
+                    </td>
+                    <td>
+                        <time th:if="${u.lastLoginAt != null}" th:datetime="${u.lastLoginAt}">
+                            <span th:text="${#temporals.format(u.lastLoginAt, 'yyyy-MM-dd')}">2026-01-01</span>
+                            <span class="date-time-gap" aria-hidden="true"></span>
+                            <span th:text="${#temporals.format(u.lastLoginAt, 'HH:mm:ss')}">12:30:45</span>
+                        </time>
+                        <span th:if="${u.lastLoginAt == null}">—</span>
+                    </td>
                     <td class="actions-cell actions-cell-wide">
                         <th:block th:if="${u.userRole == T(com.library.entity.enums.UserRole).ADMIN}">
                             <span class="muted-note" title="Protected">Protected</span>

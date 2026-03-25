@@ -101,7 +101,8 @@ public class RegistrationApprovalService {
         notify(user, adminUserId, NotificationType.account_rejected, "Registration not approved", message);
     }
 
-    private void notify(User recipient, String adminUserId, NotificationType type, String title, String message) {
+    @SuppressWarnings("null")
+private void notify(User recipient, String adminUserId, NotificationType type, String title, String message) {
         Notification n = new Notification();
         n.setNotificationId(UUID.randomUUID().toString());
         n.setRecipient(recipient);

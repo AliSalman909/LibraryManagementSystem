@@ -1,5 +1,13 @@
 package com.library.service;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.library.entity.Book;
 import com.library.entity.BookCopy;
 import com.library.entity.BorrowRecord;
@@ -8,18 +16,12 @@ import com.library.entity.Librarian;
 import com.library.entity.Student;
 import com.library.entity.enums.BorrowRequestStatus;
 import com.library.exception.BusinessRuleException;
-import com.library.repository.BookRepository;
 import com.library.repository.BookCopyRepository;
+import com.library.repository.BookRepository;
 import com.library.repository.BorrowRecordRepository;
 import com.library.repository.BorrowRequestRepository;
 import com.library.repository.LibrarianRepository;
 import com.library.repository.StudentRepository;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BorrowRequestService {
@@ -81,6 +83,7 @@ public class BorrowRequestService {
             throw new BusinessRuleException("You already have a pending request for this book.");
         }
 
+        @SuppressWarnings("null")
         Book book = bookRepository.findById(bookId).orElseThrow(() -> new BusinessRuleException("Book not found."));
         if (book.getAvailableCopies() <= 0) {
             throw new BusinessRuleException("This book is currently unavailable.");

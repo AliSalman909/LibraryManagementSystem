@@ -1,5 +1,13 @@
 package com.library.service;
 
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.library.dto.RegistrationForm;
 import com.library.entity.AdminProfile;
 import com.library.entity.Librarian;
@@ -17,12 +25,6 @@ import com.library.repository.StudentRepository;
 import com.library.repository.UserRepository;
 import com.library.security.PasswordEncryptionService;
 import com.library.security.UserIdEncryptionService;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class RegistrationService {
@@ -65,6 +67,7 @@ public class RegistrationService {
      * @param currentFromSession may be null or invalid — a new id is allocated
      * @return normalized plain id to store in session and show on the form
      */
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public String ensurePendingPlainUserIdForSession(String currentFromSession) {
         if (userIdEncryptionService.isValidPlainUserId(currentFromSession)) {
@@ -81,6 +84,7 @@ public class RegistrationService {
      *
      * @return normalized plain user id for {@link #register}
      */
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public String validateSessionPlainUserIdForSubmit(String fromSession) {
         if (!userIdEncryptionService.isValidPlainUserId(fromSession)) {
@@ -95,6 +99,7 @@ public class RegistrationService {
         return normalized;
     }
 
+    @SuppressWarnings("null")
     private String generateUniquePlainUserId() {
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         for (int attempt = 0; attempt < 200; attempt++) {

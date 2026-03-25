@@ -468,6 +468,21 @@ a:hover {
     padding: 2rem 1rem 3rem;
 }
 
+.page-dashboard {
+    overflow-x: hidden;
+}
+
+/* Wider admin table pages: expand usable area on all sides. */
+.page-dashboard .dashboard-main.dashboard-main-wide {
+    width: 100%;
+    max-width: 1800px;
+    padding: 1rem 0.75rem 1.5rem;
+}
+
+.page-dashboard .dashboard-main.dashboard-main-wide .dashboard-hero {
+    padding: 1.85rem 1.65rem;
+}
+
 .dashboard-hero {
     padding: 2rem 1.5rem;
     border-radius: var(--radius);
@@ -669,6 +684,8 @@ a:hover {
 .table-wrap {
     overflow-x: auto;
     margin-top: 1rem;
+    width: 100%;
+    max-width: 100%;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -775,9 +792,71 @@ a:hover {
     border: 0;
 }
 
-.user-accounts-table-wrap {
-    max-height: min(70vh, 720px);
-    overflow: auto;
+
+.pending-registrations-table {
+    min-width: 980px;
+}
+
+.pending-registrations-table th,
+.pending-registrations-table td {
+    padding: 0.75rem 0.7rem;
+}
+
+.pending-registrations-table th:nth-child(1),
+.pending-registrations-table td:nth-child(1) {
+    min-width: 170px;
+}
+
+.pending-registrations-table th:nth-child(2),
+.pending-registrations-table td:nth-child(2) {
+    min-width: 200px;
+}
+
+.pending-registrations-table th:nth-child(3),
+.pending-registrations-table td:nth-child(3) {
+    min-width: 240px;
+}
+
+.pending-registrations-table td:nth-child(2),
+.pending-registrations-table th:nth-child(2) {
+    padding-right: 0.45rem;
+}
+
+.pending-registrations-table td:nth-child(3),
+.pending-registrations-table th:nth-child(3) {
+    padding-left: 0.45rem;
+}
+
+.pending-registrations-table th:nth-child(4),
+.pending-registrations-table td:nth-child(4) {
+    min-width: 130px;
+}
+
+.pending-registrations-table th:nth-child(5),
+.pending-registrations-table td:nth-child(5) {
+    min-width: 260px;
+}
+
+.pending-registrations-table .pending-reason-input {
+    min-width: 240px;
+    max-width: 320px;
+}
+
+.pending-registrations-table .date-time-gap {
+    display: inline-block;
+    width: 0.45rem;
+}
+
+.user-accounts-table .date-time-gap {
+    display: inline-block;
+    width: 0.45rem;
+}
+
+/* Slightly reduce left/right padding on the user accounts page
+   so the table can use more of the right side width. */
+.page-dashboard .dashboard-main.dashboard-main-wide.user-accounts-main-wide {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
 }
 
 .cell-mono,
