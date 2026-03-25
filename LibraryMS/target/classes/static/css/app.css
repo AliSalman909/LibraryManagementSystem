@@ -157,6 +157,7 @@ a:hover {
     align-self: stretch;
 }
 
+
 /* Center the signup card vertically and horizontally between header and footer */
 .page-register .auth-shell {
     flex: 1 1 auto;
@@ -166,14 +167,12 @@ a:hover {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: clamp(1rem, 4vh, 2.5rem) 1rem;
+    padding: clamp(1rem, 4vh, 2.5rem) 0.25rem;
     box-sizing: border-box;
 }
 
-.page-register .auth-card {
-    width: min(680px, 100%);
-    margin-inline: auto;
-}
+
+
 
 .page-register .auth-title,
 .page-register .auth-sub {
@@ -219,6 +218,18 @@ a:hover {
     border-radius: var(--radius);
     background: var(--bg-elevated);
     border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Sign-in only: slightly wider card than default. */
+.page-auth .auth-card {
+    width: min(480px, 100%);
+}
+
+/* Registration: make the create-account form wider. */
+.page-register .auth-card {
+    width: 100%;
+    max-width: 840px;
+    margin-inline: auto;
 }
 
 .card-elevated {
@@ -384,6 +395,17 @@ a:hover {
     line-height: 1.2;
 }
 
+/* Same sizing/typography for student portal action buttons */
+.portal-primary-action {
+    min-width: 220px;
+    min-height: 42px;
+    padding: 0.6rem 1rem;
+    font-family: var(--font);
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
 .btn-outline {
     border-color: rgba(255, 255, 255, 0.2);
     color: var(--text);
@@ -482,6 +504,44 @@ a:hover {
 
 .page-dashboard {
     overflow-x: hidden;
+}
+
+/* Student: make search page main area expand within safe bounds */
+.student-books-main-wide .dashboard-hero {
+    width: 100%;
+    max-width: 100%;
+}
+
+.student-requests-main-wide .dashboard-hero {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Librarian pending borrow requests: widen main without table overflow */
+.page-dashboard .dashboard-main.dashboard-main-wide.librarian-borrow-requests-main-wide {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+}
+
+.librarian-borrow-requests-table {
+    table-layout: fixed;
+}
+
+.librarian-borrow-requests-table th,
+.librarian-borrow-requests-table td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.librarian-borrow-requests-table .student-col {
+    white-space: normal;
+    min-width: 240px;
+}
+
+/* Override global min-width for action columns to prevent forcing horizontal scroll. */
+.librarian-borrow-requests-table .actions-cell {
+    min-width: 180px;
+    width: 180px;
 }
 
 /* Wider admin table pages: expand usable area on all sides. */
@@ -754,6 +814,28 @@ a:hover {
     vertical-align: middle;
 }
 
+/* Student books search: full-width, no side margins to avoid horizontal overflow. */
+.student-books-search-form {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 1rem 0;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.student-books-search-form .input {
+    flex: 1;
+    width: auto; /* Override `.input { width: 100% }` */
+    min-width: 0;
+}
+
+.student-books-search-form .btn,
+.student-books-search-form .btn-ghost,
+.student-books-search-form .btn-outline {
+    flex-shrink: 0;
+}
+
 .actions-cell .inline-action {
     display: inline;
     margin: 0 0.35rem 0.35rem 0;
@@ -869,6 +951,27 @@ a:hover {
 .page-dashboard .dashboard-main.dashboard-main-wide.user-accounts-main-wide {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
+}
+
+/* Librarian book management: widen container, but keep table from expanding */
+.page-dashboard .dashboard-main.dashboard-main-wide.librarian-books-main-wide {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+}
+
+.librarian-books-table {
+    table-layout: fixed;
+}
+
+.librarian-books-table th,
+.librarian-books-table td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.librarian-books-table .actions-cell {
+    /* Prevent long action buttons from forcing a wider table */
+    min-width: 0;
 }
 
 .cell-mono,

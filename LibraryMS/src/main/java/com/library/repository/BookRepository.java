@@ -15,6 +15,10 @@ public interface BookRepository extends JpaRepository<Book, String> {
 
     boolean existsByIsbn(String isbn);
 
+    Optional<Book>
+            findByTitleIgnoreCaseAndAuthorIgnoreCaseAndCategoryIgnoreCase(
+                    String title, String author, String category);
+
     @Query("""
             select b
             from Book b

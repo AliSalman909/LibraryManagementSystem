@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
 <head th:replace="~{fragments/layout :: head (title='Book Management — Librarian')}"></head>
 <body class="page-dashboard">
 <header th:replace="~{fragments/layout :: site-header}"></header>
-<main class="container dashboard-main">
+<main class="container dashboard-main dashboard-main-wide librarian-books-main-wide">
     <nav class="breadcrumb" aria-label="Breadcrumb">
         <a th:href="@{/librarian/dashboard}">Librarian</a>
         <span aria-hidden="true"> / </span>
@@ -53,12 +53,15 @@
     <section class="dashboard-hero card-elevated">
         <h2>Catalog list</h2>
         <div class="table-wrap">
-            <table class="data-table">
+            <table class="data-table librarian-books-table">
                 <thead>
                 <tr>
                     <th>Title</th>
                     <th>Author</th>
-                    <th>Generated ISBN</th>
+                    <th>
+                        <span sec:authorize="hasRole('LIBRARIAN')">Generated ISBN</span>
+                        <span sec:authorize="!hasRole('LIBRARIAN')">ISBN</span>
+                    </th>
                     <th>Category</th>
                     <th>Available</th>
                     <th class="actions-cell">Actions</th>
@@ -71,7 +74,10 @@
                 <tr th:each="book : ${books}">
                     <td th:text="${book.title}">Title</td>
                     <td th:text="${book.author}">Author</td>
-                    <td th:text="${book.isbn}">ISBN</td>
+                    <td>
+                        <span sec:authorize="hasRole('LIBRARIAN')" th:text="${book.isbn}">ISBN</span>
+                        <span sec:authorize="!hasRole('LIBRARIAN')">—</span>
+                    </td>
                     <td th:text="${book.category != null ? book.category : '—'}">—</td>
                     <td>
                         <span th:text="${book.availableCopies}">0</span>/<span th:text="${book.totalCopies}">0</span>

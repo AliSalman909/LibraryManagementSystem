@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head (title='Search Books — Student')}"></head>
 <body class="page-dashboard">
 <header th:replace="~{fragments/layout :: site-header}"></header>
-<main class="container dashboard-main">
+<main class="container dashboard-main dashboard-main-wide student-books-main-wide">
     <nav class="breadcrumb" aria-label="Breadcrumb">
         <a th:href="@{/student/dashboard}">Student</a>
         <span aria-hidden="true"> / </span>
@@ -12,13 +12,14 @@
 
     <div th:if="${flashSuccess}" class="alert alert-success" role="status" th:text="${flashSuccess}">Saved</div>
     <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
+    <div th:if="${flashWarn}" class="alert alert-warn" role="alert" th:text="${flashWarn}">Warning</div>
 
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Catalog</p>
         <h1>Search books</h1>
         <p class="lede">Find books by title, author, category, or ISBN, then submit a borrow request.</p>
 
-        <form class="status-inline-form" th:action="@{/student/books}" method="get">
+        <form class="status-inline-form student-books-search-form" th:action="@{/student/books}" method="get">
             <input class="input" type="text" name="q" th:value="${query}" placeholder="Search by title, author, category, ISBN"/>
             <button type="submit" class="btn btn-outline">Search</button>
             <a class="btn btn-ghost" th:href="@{/student/books}">Clear</a>

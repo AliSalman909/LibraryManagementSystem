@@ -43,7 +43,13 @@ public class StudentBookController {
             borrowRequestService.createPendingRequest(principal.getUserId(), bookId, durationDays);
             redirectAttributes.addFlashAttribute("flashSuccess", "Borrow request submitted.");
         } catch (BusinessRuleException ex) {
-            redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
+            String msg = ex.getMessage();
+            if (msg != null && msg.startsWith("BORROW_LIMIT:")) {
+                redirectAttributes.addFlashAttribute(
+                        "flashWarn", msg.substring("BORROW_LIMIT:".length()));
+            } else {
+                redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(msg));
+            }
         }
         return "redirect:/student/books";
     }

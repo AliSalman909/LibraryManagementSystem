@@ -33,6 +33,8 @@ public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, St
 
     boolean existsByStudentUserIdAndBookBookIdAndStatus(String studentUserId, String bookId, BorrowRequestStatus status);
 
+    long countDistinctBookBookIdByStudentUserIdAndStatus(String studentUserId, BorrowRequestStatus status);
+
     @Query("""
             select br
             from BorrowRequest br

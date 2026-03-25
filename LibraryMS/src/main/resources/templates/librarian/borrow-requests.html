@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head (title='Borrow Requests — Librarian')}"></head>
 <body class="page-dashboard">
 <header th:replace="~{fragments/layout :: site-header}"></header>
-<main class="container dashboard-main">
+<main class="container dashboard-main dashboard-main-wide librarian-borrow-requests-main-wide">
     <nav class="breadcrumb" aria-label="Breadcrumb">
         <a th:href="@{/librarian/dashboard}">Librarian</a>
         <span aria-hidden="true"> / </span>
@@ -19,7 +19,7 @@
         <p class="lede">Students request 7 or 14 days. On approval, due date is calculated as today + requested duration.</p>
 
         <div class="table-wrap">
-            <table class="data-table">
+            <table class="data-table librarian-borrow-requests-table">
                 <thead>
                 <tr>
                     <th>Student</th>
@@ -36,7 +36,10 @@
                     <td colspan="7" class="empty-state">No pending requests right now.</td>
                 </tr>
                 <tr th:each="request : ${pendingRequests}">
-                    <td th:text="${request.student.user.fullName}">Student</td>
+                    <td class="student-col">
+                        <div th:text="${request.student.user.fullName}">Student</div>
+                        <div class="muted-note cell-mono" th:text="${request.student.user.userId}">ID</div>
+                    </td>
                     <td th:text="${request.book.title}">Book</td>
                     <td th:text="${#temporals.format(request.requestedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
                     <td th:text="${request.requestedDurationDays + ' days'}">14 days</td>

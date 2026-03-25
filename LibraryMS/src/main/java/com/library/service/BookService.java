@@ -57,11 +57,16 @@ public class BookService {
 
     @Transactional
     public Book create(BookForm form) {
+        String title = form.getTitle().trim();
+        String author = form.getAuthor().trim();
+        String category = form.getCategory().trim();
+        ensureNoDuplicateBook(null, title, author, category);
+
         Book book = new Book();
         book.setBookId(UUID.randomUUID().toString());
-        book.setTitle(form.getTitle().trim());
-        book.setAuthor(form.getAuthor().trim());
-        book.setCategory(form.getCategory().trim());
+        book.setTitle(title);
+        book.setAuthor(author);
+        book.setCategory(category);
         String baseIsbn = generateUniqueBaseIsbn(book.getTitle(), book.getCategory());
         book.setIsbn(baseIsbn);
         book.setTotalCopies(form.getTotalCopies());
@@ -80,15 +85,19 @@ public class BookService {
         if (form.getTotalCopies() < activeBorrowedCopies) {
             throw new BusinessRuleException("Total copies cannot be less than currently borrowed copies.");
         }
+        String newTitle = form.getTitle().trim();
+        String newAuthor = form.getAuthor().trim();
         String newCategory = form.getCategory().trim();
         if (!book.getCategory().equalsIgnoreCase(newCategory)) {
             throw new BusinessRuleException(
                     "Category is part of generated ISBN codes and cannot be changed after creation.");
         }
 
+        ensureNoDuplicateBook(bookId, newTitle, newAuthor, newCategory);
+
         int previousTotalCopies = book.getTotalCopies();
-        book.setTitle(form.getTitle().trim());
-        book.setAuthor(form.getAuthor().trim());
+        book.setTitle(newTitle);
+        book.setAuthor(newAuthor);
         book.setCategory(newCategory);
         book.setTotalCopies(form.getTotalCopies());
         int newAvailableCopies = form.getTotalCopies() - activeBorrowedCopies;
@@ -97,6 +106,23 @@ public class BookService {
         Book saved = bookRepository.save(book);
         syncCopiesForTotal(saved, previousTotalCopies, form.getTotalCopies());
         return saved;
+    }
+
+    /**
+     * Prevent duplicate books: same Title + Author + Category (case-insensitive).
+     *
+     * @param currentBookId the book being updated, or null for create.
+     */
+    private void ensureNoDuplicateBook(String currentBookId, String title, String author, String category) {
+        bookRepository
+                .findByTitleIgnoreCaseAndAuthorIgnoreCaseAndCategoryIgnoreCase(title, author, category)
+                .ifPresent(
+                        existing -> {
+                            if (currentBookId == null || !existing.getBookId().equals(currentBookId)) {
+                                throw new BusinessRuleException(
+                                        "A book with the same title, author, and category already exists. Please edit the existing book instead of creating a duplicate.");
+                            }
+                        });
     }
 
     @Transactional

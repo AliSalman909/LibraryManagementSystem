@@ -132,7 +132,7 @@ CREATE TABLE notifications (
 
   CONSTRAINT pk_notifications            PRIMARY KEY (notification_id),
   CONSTRAINT fk_notifications_recipient FOREIGN KEY (recipient_id) REFERENCES users (user_id) ON DELETE CASCADE,
-  CONSTRAINT fk_notifications_sender    FOREIGN KEY (sender_id) REFERENCES users (user_id) ON DELETE SET NULL
+  CONSTRAINT fk_notifications_sender    FOREIGN KEY (sender_id)    REFERENCES users (user_id) ON DELETE SET NULL
 );
 
 -- -----------------------------------------------------------------------------
@@ -224,4 +224,3 @@ CREATE TABLE borrow_records (
 
 CREATE INDEX idx_borrow_records_student_returned ON borrow_records (student_id, returned_at);
 CREATE INDEX idx_borrow_records_book_returned ON borrow_records (book_id, returned_at);
-

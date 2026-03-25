@@ -69,11 +69,6 @@ public class BorrowRequestService {
             throw new BusinessRuleException("Borrowing is disabled for this student account.");
         }
 
-        long activeUniqueBooks = borrowRecordRepository.countDistinctBookBookIdByStudentUserIdAndReturnedAtIsNull(studentUserId);
-        if (activeUniqueBooks >= MAX_ACTIVE_UNIQUE_BOOKS) {
-            throw new BusinessRuleException("You can issue at most 3 different books at one time.");
-        }
-
         if (borrowRecordRepository.existsByStudentUserIdAndBookBookIdAndReturnedAtIsNull(studentUserId, bookId)) {
             throw new BusinessRuleException("You already have an active loan for this book.");
         }
@@ -81,6 +76,21 @@ public class BorrowRequestService {
         if (borrowRequestRepository.existsByStudentUserIdAndBookBookIdAndStatus(
                 studentUserId, bookId, BorrowRequestStatus.PENDING)) {
             throw new BusinessRuleException("You already have a pending request for this book.");
+        }
+
+        long activeUniqueBooks =
+                borrowRecordRepository.countDistinctBookBookIdByStudentUserIdAndReturnedAtIsNull(studentUserId);
+        long pendingUniqueBooks =
+                borrowRequestRepository.countDistinctBookBookIdByStudentUserIdAndStatus(
+                        studentUserId, BorrowRequestStatus.PENDING);
+        long totalUniqueRequestedBooks = activeUniqueBooks + pendingUniqueBooks;
+
+        int maxBooks = Math.min(student.getMaxBorrowLimit(), MAX_ACTIVE_UNIQUE_BOOKS);
+        if (totalUniqueRequestedBooks >= maxBooks) {
+            throw new BusinessRuleException(
+                    "BORROW_LIMIT:You can request at most "
+                            + maxBooks
+                            + " books at a time. Return one to request a new book.");
         }
 
         @SuppressWarnings("null")
