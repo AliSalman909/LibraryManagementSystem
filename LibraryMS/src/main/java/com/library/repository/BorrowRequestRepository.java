@@ -2,9 +2,11 @@ package com.library.repository;
 
 import com.library.entity.BorrowRequest;
 import com.library.entity.enums.BorrowRequestStatus;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -46,4 +48,17 @@ public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, St
             where br.requestId = :requestId
             """)
     Optional<BorrowRequest> findByIdWithDetails(@Param("requestId") String requestId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select br
+            from BorrowRequest br
+            join fetch br.book
+            join fetch br.student s
+            join fetch s.user
+            left join fetch br.processedBy p
+            left join fetch p.user
+            where br.requestId = :requestId
+            """)
+    Optional<BorrowRequest> findByIdWithDetailsForUpdate(@Param("requestId") String requestId);
 }

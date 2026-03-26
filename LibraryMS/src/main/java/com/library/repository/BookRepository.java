@@ -1,10 +1,12 @@
 package com.library.repository;
 
 import com.library.entity.Book;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import java.time.Instant;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -52,4 +54,8 @@ public interface BookRepository extends JpaRepository<Book, String> {
     int decrementAvailableCopiesIfAvailable(
             @Param("bookId") String bookId,
             @Param("updatedAt") Instant updatedAt);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select b from Book b where b.bookId = :id")
+    Optional<Book> findByIdForUpdate(@Param("id") String id);
 }

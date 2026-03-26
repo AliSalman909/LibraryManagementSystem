@@ -5,16 +5,29 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.Instant;
 
 @Entity
-@Table(name = "books")
+@Table(
+        name = "books",
+        uniqueConstraints = {
+            @UniqueConstraint(
+                    name = "uq_books_title_author_category",
+                    columnNames = {"title", "author", "category"})
+        })
 public class Book {
 
+    /** Plain 5-character ID shown to users (no UUID). */
+    public static final int PLAIN_BOOK_ID_LENGTH = 5;
+
+    /** Unambiguous characters for 5-char ids. */
+    public static final String PLAIN_BOOK_ID_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
     @Id
-    @Column(name = "book_id", nullable = false, length = 64)
+    @Column(name = "book_id", nullable = false, length = PLAIN_BOOK_ID_LENGTH)
     private String bookId;
 
     @Column(nullable = false, length = 200)

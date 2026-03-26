@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -71,6 +72,26 @@ public class ProfilePictureStorageService {
                     "We could not save your profile photo. Please try again in a moment or pick a different file.");
         }
         return "/uploads/profiles/" + filename;
+    }
+
+    /**
+     * Deletes a previously stored profile photo by its web path (returned from {@link #store}).
+     *
+     * <p>This is used to keep file-system and DB consistent when a DB transaction fails and rolls back.
+     */
+    public void deleteByWebPath(String webPath) {
+        Optional.ofNullable(webPath)
+                .filter(p -> !p.isBlank())
+                .ifPresent(
+                        p -> {
+                            String filename = Paths.get(p).getFileName().toString();
+                            Path target = uploadRoot.resolve(filename).normalize();
+                            try {
+                                Files.deleteIfExists(target);
+                            } catch (IOException ignored) {
+                                // Best-effort cleanup; DB rollback is the primary consistency mechanism.
+                            }
+                        });
     }
 
     private String resolveExtension(String originalFilename) {

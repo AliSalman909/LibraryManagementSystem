@@ -1,5 +1,15 @@
 package com.library.service;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.library.dto.AdminUserAccountView;
 import com.library.entity.Notification;
 import com.library.entity.RegistrationRequest;
@@ -18,14 +28,6 @@ import com.library.repository.StudentRepository;
 import com.library.repository.UserRepository;
 import com.library.security.PasswordEncryptionService;
 import com.library.security.UserIdEncryptionService;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminUserAccountService {
@@ -143,7 +145,7 @@ public class AdminUserAccountService {
         }
         RegistrationRequest rr =
                 registrationRequestRepository
-                        .findByUser_UserId(userId)
+                        .findByUserUserIdForUpdate(userId)
                         .orElseThrow(
                                 () ->
                                         new BusinessRuleException(
@@ -182,10 +184,9 @@ public class AdminUserAccountService {
         userRepository.deleteById(uid);
     }
 
-    @SuppressWarnings("null")
     private User loadManagedUser(String userId) {
         return userRepository
-                .findById(userId)
+                .findByIdForUpdate(userId)
                 .orElseThrow(
                         () ->
                                 new BusinessRuleException(

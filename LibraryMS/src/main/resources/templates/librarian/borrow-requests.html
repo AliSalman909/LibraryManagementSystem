@@ -37,8 +37,10 @@
                 </tr>
                 <tr th:each="request : ${pendingRequests}">
                     <td class="student-col">
-                        <div th:text="${request.student.user.fullName}">Student</div>
-                        <div class="muted-note cell-mono" th:text="${request.student.user.userId}">ID</div>
+                        <div class="student-name" th:text="${request.student.user.fullName}">Student</div>
+                        <div class="muted-note cell-mono student-id-cell">
+                            ID: <span th:text="${request.student.user.userId}">ID</span>
+                        </div>
                     </td>
                     <td th:text="${request.book.title}">Book</td>
                     <td th:text="${#temporals.format(request.requestedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>

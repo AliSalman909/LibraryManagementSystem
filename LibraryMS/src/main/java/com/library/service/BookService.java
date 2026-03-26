@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -20,6 +21,10 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final BookCopyRepository bookCopyRepository;
+
+    /** Five unambiguous characters shown to librarians. */
+    private static final String PLAIN_BOOK_ID_ALPHABET = Book.PLAIN_BOOK_ID_ALPHABET;
+    private static final int PLAIN_BOOK_ID_LENGTH = Book.PLAIN_BOOK_ID_LENGTH;
 
     public BookService(BookRepository bookRepository, BookCopyRepository bookCopyRepository) {
         this.bookRepository = bookRepository;
@@ -63,7 +68,7 @@ public class BookService {
         ensureNoDuplicateBook(null, title, author, category);
 
         Book book = new Book();
-        book.setBookId(UUID.randomUUID().toString());
+        book.setBookId(generateUniquePlainBookId());
         book.setTitle(title);
         book.setAuthor(author);
         book.setCategory(category);
@@ -78,9 +83,27 @@ public class BookService {
         return saved;
     }
 
+    private String generateUniquePlainBookId() {
+        // 36^5 is large enough for typical library catalogs; we still check for safety.
+        for (int attempt = 0; attempt < 500; attempt++) {
+            StringBuilder sb = new StringBuilder(PLAIN_BOOK_ID_LENGTH);
+            for (int i = 0; i < PLAIN_BOOK_ID_LENGTH; i++) {
+                sb.append(PLAIN_BOOK_ID_ALPHABET.charAt((int) (Math.random() * PLAIN_BOOK_ID_ALPHABET.length())));
+            }
+            String candidate = sb.toString();
+            if (!bookRepository.existsById(Objects.requireNonNull(candidate))) {
+                return candidate;
+            }
+        }
+        throw new BusinessRuleException("Could not allocate a unique book id. Please try again.");
+    }
+
     @Transactional
     public Book update(String bookId, BookForm form) {
-        Book book = findByIdOrThrow(bookId);
+        Book book =
+                bookRepository
+                        .findByIdForUpdate(bookId)
+                        .orElseThrow(() -> new BusinessRuleException("Book not found."));
         int activeBorrowedCopies = Math.max(0, book.getTotalCopies() - book.getAvailableCopies());
         if (form.getTotalCopies() < activeBorrowedCopies) {
             throw new BusinessRuleException("Total copies cannot be less than currently borrowed copies.");
@@ -88,24 +111,36 @@ public class BookService {
         String newTitle = form.getTitle().trim();
         String newAuthor = form.getAuthor().trim();
         String newCategory = form.getCategory().trim();
-        if (!book.getCategory().equalsIgnoreCase(newCategory)) {
-            throw new BusinessRuleException(
-                    "Category is part of generated ISBN codes and cannot be changed after creation.");
-        }
-
         ensureNoDuplicateBook(bookId, newTitle, newAuthor, newCategory);
 
         int previousTotalCopies = book.getTotalCopies();
+
+        // Changing category/title changes the base ISBN, so we must regenerate it and refresh all copy ISBN codes.
+        String newBaseIsbn = generateUniqueBaseIsbn(newTitle, newCategory);
+
         book.setTitle(newTitle);
         book.setAuthor(newAuthor);
         book.setCategory(newCategory);
+        book.setIsbn(newBaseIsbn);
         book.setTotalCopies(form.getTotalCopies());
         int newAvailableCopies = form.getTotalCopies() - activeBorrowedCopies;
         book.setAvailableCopies(newAvailableCopies);
         book.setUpdatedAt(Instant.now());
         Book saved = bookRepository.save(book);
         syncCopiesForTotal(saved, previousTotalCopies, form.getTotalCopies());
+        refreshCopiesIsbnCodes(saved);
         return saved;
+    }
+
+    private void refreshCopiesIsbnCodes(Book book) {
+        // Refresh ISBN codes for every physical copy to keep them consistent with the updated base ISBN.
+        List<BookCopy> copies =
+                new ArrayList<>(
+                        bookCopyRepository.findAllCopiesForUpdateOrderByCopyNumberAsc(book.getBookId()));
+        for (BookCopy copy : copies) {
+            copy.setIsbnCode(generateUniqueCopyIsbn(book.getIsbn(), copy.getCopyNumber()));
+        }
+        bookCopyRepository.saveAll(copies);
     }
 
     /**
@@ -127,11 +162,14 @@ public class BookService {
 
     @Transactional
     public void delete(String bookId) {
-        Book book = findByIdOrThrow(bookId);
+        Book book =
+                bookRepository
+                        .findByIdForUpdate(bookId)
+                        .orElseThrow(() -> new BusinessRuleException("Book not found."));
         if (book.getAvailableCopies() < book.getTotalCopies()) {
             throw new BusinessRuleException("Cannot delete a book that is currently borrowed.");
         }
-        List<BookCopy> copies = bookCopyRepository.findByBookBookIdOrderByCopyNumberAsc(bookId);
+        List<BookCopy> copies = bookCopyRepository.findAllCopiesForUpdateOrderByCopyNumberAsc(bookId);
         if (!copies.isEmpty()) {
             bookCopyRepository.deleteAll(copies);
         }
@@ -147,7 +185,8 @@ public class BookService {
             return;
         }
         int toRemove = oldTotal - newTotal;
-        List<BookCopy> copies = new ArrayList<>(bookCopyRepository.findByBookBookIdOrderByCopyNumberAsc(book.getBookId()));
+        List<BookCopy> copies =
+                new ArrayList<>(bookCopyRepository.findAllCopiesForUpdateOrderByCopyNumberAsc(book.getBookId()));
         copies.sort(Comparator.comparingInt(BookCopy::getCopyNumber).reversed());
         List<BookCopy> removable = copies.stream().filter(BookCopy::isAvailable).limit(toRemove).toList();
         if (removable.size() < toRemove) {

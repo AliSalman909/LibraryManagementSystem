@@ -1,12 +1,12 @@
-# Library Management System — Authentication Module
+# Library Management System
 
-Spring Boot 3.2 (Java 17) application with session-based login, BCrypt passwords, role-based dashboards, and a registration flow aligned with the `library_db` schema.
+Spring Boot 3.5.x (Java 17) application with session-based login, encrypted passwords, role-based dashboards, and a registration flow aligned with the `library_db` schema.
 
 ## Prerequisites
 
 - JDK 17+
 - Maven 3.9+
-- MySQL 8+ with database `library_db` created and tables created using your provided SQL script
+- MySQL 8+ with database `library_db` created and tables created using `docs/library_db_schema.sql`
 
 ## Configuration
 
@@ -15,20 +15,27 @@ Edit `src/main/resources/application.properties`:
 - `spring.datasource.username` / `spring.datasource.password` for your MySQL user
 - `spring.datasource.url` if MySQL is not on `localhost:3306`
 
-`spring.jpa.hibernate.ddl-auto=validate` expects the database to match the entities (same tables and columns as your schema).
+- `spring.jpa.hibernate.ddl-auto=update` updates the schema if it needs to.
+- `server.port=8081` is preferred, but if it is already in use the app will automatically switch to a free port at startup.
 
 ## Run
 
-```bash
-cd C:\Users\CodeTech\Desktop\LibraryMS
+```powershell
+cd C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS
 mvn spring-boot:run
 ```
 
-Run the app, then open the URL shown in the console (Spring Boot chooses a free port). Debug mode will auto-open the correct URL in your browser.
+When the server starts, it will automatically open the correct URL in your browser (it uses the actual runtime port, including any auto-switch to a free port).
+
+If you run multiple debug sessions at the same time, the server won’t fail with “port already in use”.
 
 ## Bootstrap admin (optional)
 
-See `docs/seed-admin.sql` for a ready-made **active** administrator using password `password` (BCrypt hash included). Run it in MySQL after creating tables, then adjust the email or hash for production.
+To bootstrap the system, create the **first ADMIN**.
+
+You can do this either by:
+- Using the registration page (`/register`) and selecting role `ADMIN` when there are no admins yet.
+- Or by inserting a row into `users` plus the corresponding `admins` row directly in MySQL.
 
 ## Approve registrations (admin UI)
 
@@ -57,6 +64,16 @@ WHERE u.email = 'you@example.com';
 
 Public: `/`, `/login`, `/register`, static assets, `/error`, `/access-denied`.  
 Admin-only: `/admin/registrations/pending` (and POST approve/reject under `/admin/registrations/...`).
+
+## Concurrency / Data consistency
+
+The app uses database transactions and row-level pessimistic locks on the critical update flows:
+- Borrow approvals/rejections lock the `borrow_requests` row and pessimistically lock an available `book_copy` before issuing a copy.
+- Registration approve/reject locks the `registration_requests` row and locks the target `users` row before updating `account_status`.
+- Book edit/delete locks the `books` row and all `book_copies` for the affected book while recomputing ISBN/copy data.
+- “First ADMIN can be created only once” is guarded with a MySQL advisory lock (`GET_LOCK`).
+
+For profile-picture uploads: if the DB transaction fails and rolls back, the uploaded image is deleted to prevent orphan files.
 
 ## Package layout
 

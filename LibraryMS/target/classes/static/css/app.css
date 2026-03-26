@@ -412,6 +412,7 @@ a:hover {
     background: transparent;
 }
 
+
 .btn-ghost {
     background: transparent;
     color: var(--accent);
@@ -536,6 +537,13 @@ a:hover {
 .librarian-borrow-requests-table .student-col {
     white-space: normal;
     min-width: 240px;
+}
+
+.student-id-cell {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    word-break: break-all;
 }
 
 /* Override global min-width for action columns to prevent forcing horizontal scroll. */
@@ -962,6 +970,7 @@ a:hover {
 .librarian-books-table {
     table-layout: fixed;
 }
+
 
 .librarian-books-table th,
 .librarian-books-table td {

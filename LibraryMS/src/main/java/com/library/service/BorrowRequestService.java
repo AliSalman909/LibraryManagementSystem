@@ -63,7 +63,7 @@ public class BorrowRequestService {
 
     @Transactional
     public BorrowRequest createPendingRequest(String studentUserId, String bookId, Integer durationDays) {
-        Student student = studentRepository.findByUserIdWithUser(studentUserId)
+        Student student = studentRepository.findByUserIdWithUserForUpdate(studentUserId)
                 .orElseThrow(() -> new BusinessRuleException("Student account not found."));
         if (!student.isCanBorrow()) {
             throw new BusinessRuleException("Borrowing is disabled for this student account.");
@@ -121,7 +121,7 @@ public class BorrowRequestService {
 
     @Transactional
     public BorrowRecord approve(String requestId, String librarianUserId, LocalDate dueDate) {
-        BorrowRequest request = borrowRequestRepository.findByIdWithDetails(requestId)
+        BorrowRequest request = borrowRequestRepository.findByIdWithDetailsForUpdate(requestId)
                 .orElseThrow(() -> new BusinessRuleException("Borrow request not found."));
         if (request.getStatus() != BorrowRequestStatus.PENDING) {
             throw new BusinessRuleException("Only pending requests can be approved.");
@@ -137,12 +137,18 @@ public class BorrowRequestService {
                 .orElseThrow(() -> new BusinessRuleException("Librarian account not found."));
 
         Book book = request.getBook();
+        // Lock the book row so concurrent book edits (update/delete) can't race against approvals.
+        bookRepository
+                .findByIdForUpdate(book.getBookId())
+                .orElseThrow(() -> new BusinessRuleException("Book not found."));
         int updatedRows = bookRepository.decrementAvailableCopiesIfAvailable(book.getBookId(), Instant.now());
         if (updatedRows == 0) {
             throw new BusinessRuleException("Book is no longer available.");
         }
-        BookCopy availableCopy = bookCopyRepository
-                .findFirstByBookBookIdAndAvailableTrueOrderByCopyNumberAsc(book.getBookId())
+        List<BookCopy> lockedAvailableCopies =
+                bookCopyRepository.findAvailableCopiesForUpdateOrderByCopyNumberAsc(book.getBookId());
+        BookCopy availableCopy = lockedAvailableCopies.stream()
+                .findFirst()
                 .orElseThrow(() -> new BusinessRuleException("No available copy found for this book."));
         availableCopy.setAvailable(false);
 
@@ -178,7 +184,7 @@ public class BorrowRequestService {
 
     @Transactional
     public void reject(String requestId, String librarianUserId) {
-        BorrowRequest request = borrowRequestRepository.findByIdWithDetails(requestId)
+        BorrowRequest request = borrowRequestRepository.findByIdWithDetailsForUpdate(requestId)
                 .orElseThrow(() -> new BusinessRuleException("Borrow request not found."));
         if (request.getStatus() != BorrowRequestStatus.PENDING) {
             throw new BusinessRuleException("Only pending requests can be rejected.");

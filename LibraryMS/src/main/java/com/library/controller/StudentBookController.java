@@ -47,6 +47,9 @@ public class StudentBookController {
             if (msg != null && msg.startsWith("BORROW_LIMIT:")) {
                 redirectAttributes.addFlashAttribute(
                         "flashWarn", msg.substring("BORROW_LIMIT:".length()));
+            } else if (msg != null && msg.toLowerCase().contains("currently unavailable")) {
+                // Booking unavailable: show as warning, not error.
+                redirectAttributes.addFlashAttribute("flashWarn", UserFacingMessages.orGeneric(msg));
             } else {
                 redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(msg));
             }

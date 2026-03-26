@@ -42,7 +42,7 @@ public class RegistrationApprovalService {
     public void approve(String requestId, String adminUserId) {
         RegistrationRequest rr =
                 registrationRequestRepository
-                        .findByIdWithUser(requestId)
+                        .findByIdWithUserForUpdate(requestId)
                         .orElseThrow(
                                 () ->
                                         new BusinessRuleException(
@@ -54,22 +54,31 @@ public class RegistrationApprovalService {
         }
 
         User user = rr.getUser();
-        user.setAccountStatus(AccountStatus.active);
-        userRepository.save(user);
+        User lockedUser =
+                userRepository
+                        .findByIdForUpdate(user.getUserId())
+                        .orElseThrow(() -> new BusinessRuleException("User account not found."));
+        lockedUser.setAccountStatus(AccountStatus.active);
+        userRepository.save(lockedUser);
 
         rr.setStatus(RequestStatus.approved);
         rr.setReviewedAt(Instant.now());
         rr.setRejectionReason(null);
         registrationRequestRepository.save(rr);
 
-        notify(user, adminUserId, NotificationType.account_approved, "Account approved", buildApprovedMessage(user));
+        notify(
+                lockedUser,
+                adminUserId,
+                NotificationType.account_approved,
+                "Account approved",
+                buildApprovedMessage(lockedUser));
     }
 
     @Transactional
     public void reject(String requestId, String adminUserId, String reason) {
         RegistrationRequest rr =
                 registrationRequestRepository
-                        .findByIdWithUser(requestId)
+                        .findByIdWithUserForUpdate(requestId)
                         .orElseThrow(
                                 () ->
                                         new BusinessRuleException(
@@ -81,8 +90,12 @@ public class RegistrationApprovalService {
         }
 
         User user = rr.getUser();
-        user.setAccountStatus(AccountStatus.rejected);
-        userRepository.save(user);
+        User lockedUser =
+                userRepository
+                        .findByIdForUpdate(user.getUserId())
+                        .orElseThrow(() -> new BusinessRuleException("User account not found."));
+        lockedUser.setAccountStatus(AccountStatus.rejected);
+        userRepository.save(lockedUser);
 
         String trimmed = StringUtils.hasText(reason) ? reason.trim() : null;
         if (trimmed != null && trimmed.length() > 255) {
@@ -98,7 +111,12 @@ public class RegistrationApprovalService {
                 trimmed != null
                         ? "Your registration was rejected. Reason: " + trimmed
                         : "Your registration was rejected. Contact the library if you need more information.";
-        notify(user, adminUserId, NotificationType.account_rejected, "Registration not approved", message);
+        notify(
+                lockedUser,
+                adminUserId,
+                NotificationType.account_rejected,
+                "Registration not approved",
+                message);
     }
 
     @SuppressWarnings("null")

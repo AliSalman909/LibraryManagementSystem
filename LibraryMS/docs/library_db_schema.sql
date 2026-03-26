@@ -1,6 +1,6 @@
 CREATE DATABASE IF NOT EXISTS library_db
- CHARACTER SET utf8mb4
- COLLATE utf8mb4_unicode_ci;
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
 USE library_db;
 
@@ -139,7 +139,7 @@ CREATE TABLE notifications (
 -- books
 -- -----------------------------------------------------------------------------
 CREATE TABLE books (
-  book_id           VARCHAR(64)   NOT NULL,
+  book_id           VARCHAR(5)    NOT NULL,
   title             VARCHAR(200)  NOT NULL,
   author            VARCHAR(150)  NOT NULL,
   isbn              VARCHAR(64)   NULL,
@@ -150,6 +150,7 @@ CREATE TABLE books (
   updated_at        DATETIME(6)   NOT NULL,
 
   CONSTRAINT pk_books                        PRIMARY KEY (book_id),
+  CONSTRAINT uq_books_title_author_category  UNIQUE (title, author, category),
   CONSTRAINT uq_books_isbn                   UNIQUE (isbn),
   CONSTRAINT chk_books_total_copies_positive CHECK (total_copies > 0),
   CONSTRAINT chk_books_available_nonnegative CHECK (available_copies >= 0),
@@ -161,7 +162,7 @@ CREATE TABLE books (
 -- -----------------------------------------------------------------------------
 CREATE TABLE book_copies (
   copy_id       VARCHAR(64)  NOT NULL,
-  book_id       VARCHAR(64)  NOT NULL,
+  book_id       VARCHAR(5)   NOT NULL,
   isbn_code     VARCHAR(96)  NOT NULL,
   copy_number   INT          NOT NULL,
   is_available  BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -179,7 +180,7 @@ CREATE TABLE book_copies (
 -- -----------------------------------------------------------------------------
 CREATE TABLE borrow_requests (
   request_id                 VARCHAR(64)  NOT NULL,
-  book_id                    VARCHAR(64)  NOT NULL,
+  book_id                    VARCHAR(5)   NOT NULL,
   student_id                 VARCHAR(512) NOT NULL,
   processed_by_librarian_id  VARCHAR(512) NULL,
   status                     ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
@@ -205,7 +206,7 @@ CREATE INDEX idx_borrow_requests_requested_at ON borrow_requests (requested_at);
 CREATE TABLE borrow_records (
   record_id               VARCHAR(64)  NOT NULL,
   request_id              VARCHAR(64)  NOT NULL,
-  book_id                 VARCHAR(64)  NOT NULL,
+  book_id                 VARCHAR(5)   NOT NULL,
   copy_id                 VARCHAR(64)  NULL,
   student_id              VARCHAR(512) NOT NULL,
   issued_by_librarian_id  VARCHAR(512) NOT NULL,
