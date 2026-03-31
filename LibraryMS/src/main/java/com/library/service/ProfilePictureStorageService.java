@@ -27,7 +27,7 @@ public class ProfilePictureStorageService {
     private final DataSize maxFileSize;
 
     public ProfilePictureStorageService(
-            @Value("${app.upload.dir:${user.home}/.libraryms/uploads/profile-pictures}") String uploadDir,
+            @Value("${app.upload.dir:uploads/profile-pictures}") String uploadDir,
             @Value("${spring.servlet.multipart.max-file-size}") DataSize maxFileSize) {
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize;

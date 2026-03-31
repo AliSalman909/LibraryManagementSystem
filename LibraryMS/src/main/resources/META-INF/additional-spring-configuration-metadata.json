@@ -1,9 +1,19 @@
-{"properties": [{
-  "name": "app.browser.open-on-start",
-  "type": "java.lang.String",
-  "description": "A description for 'app.browser.open-on-start'"
-}]}{"properties": [{
-  "name": "app.browser.open-on-start",
-  "type": "java.lang.String",
-  "description": "A description for 'app.browser.open-on-start'"
-}]}
+{
+  "properties": [
+    {
+      "name": "app.browser.open-on-start",
+      "type": "java.lang.String",
+      "description": "A description for 'app.browser.open-on-start'"
+    },
+    {
+      "name": "app.upload.dir",
+      "type": "java.lang.String",
+      "description": "A description for 'app.upload.dir'"
+    },
+    {
+      "name": "app.security.password-secret",
+      "type": "java.lang.String",
+      "description": "A description for 'app.security.password-secret'"
+    }
+  ]
+}
