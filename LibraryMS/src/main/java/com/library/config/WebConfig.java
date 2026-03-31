@@ -11,7 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${app.upload.dir:uploads/profile-pictures}")
+    @Value("${app.upload.dir:${user.home}/.libraryms/uploads/profile-pictures}")
     private String uploadDir;
 
     @Override
