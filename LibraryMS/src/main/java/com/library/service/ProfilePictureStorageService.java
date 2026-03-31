@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.unit.DataSize;
@@ -32,6 +34,7 @@ public class ProfilePictureStorageService {
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.maxFileSize = maxFileSize;
         this.maxFileBytes = maxFileSize.toBytes();
+        migrateLegacyUploads();
     }
 
     /**
@@ -110,12 +113,59 @@ public class ProfilePictureStorageService {
         if (contentType == null) {
             return null;
         }
-        return switch (contentType.toLowerCase(Locale.ROOT)) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png" -> ".png";
-            case "image/gif" -> ".gif";
-            case "image/webp" -> ".webp";
-            default -> null;
+        switch (contentType.toLowerCase(Locale.ROOT)) {
+            case "image/jpeg":
+                return ".jpg";
+            case "image/png":
+                return ".png";
+            case "image/gif":
+                return ".gif";
+            case "image/webp":
+                return ".webp";
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Moves previously uploaded files from common legacy relative folders to the stable upload root.
+     * This keeps existing DB image paths working when IDE working directories differ.
+     */
+    private void migrateLegacyUploads() {
+        try {
+            Files.createDirectories(uploadRoot);
+        } catch (IOException ignored) {
+            return;
+        }
+
+        Path cwd = Paths.get("").toAbsolutePath().normalize();
+        Path[] legacyDirs = new Path[] {
+            cwd.resolve("uploads/profile-pictures").normalize(),
+            cwd.resolve("LibraryMS/uploads/profile-pictures").normalize(),
+            cwd.resolve("../uploads/profile-pictures").normalize()
         };
+
+        for (Path legacyDir : legacyDirs) {
+            if (legacyDir.equals(uploadRoot) || !Files.isDirectory(legacyDir)) {
+                continue;
+            }
+            try (Stream<Path> files = Files.list(legacyDir)) {
+                files.filter(Files::isRegularFile).forEach(this::copyIfMissingToUploadRoot);
+            } catch (IOException ignored) {
+                // Best-effort migration; app should continue even if migration is partially unavailable.
+            }
+        }
+    }
+
+    private void copyIfMissingToUploadRoot(Path source) {
+        try {
+            Path target = uploadRoot.resolve(source.getFileName().toString()).normalize();
+            if (!target.startsWith(uploadRoot) || Files.exists(target)) {
+                return;
+            }
+            Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
+        } catch (IOException ignored) {
+            // Best-effort migration; failed files can still be re-uploaded by users.
+        }
     }
 }
