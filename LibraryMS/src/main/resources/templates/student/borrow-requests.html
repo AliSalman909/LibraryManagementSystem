@@ -32,14 +32,14 @@
                     <td colspan="6" class="empty-state">No borrow requests yet.</td>
                 </tr>
                 <tr th:each="request : ${requests}">
-                    <td th:text="${request.book.title}">Title</td>
-                    <td>
+                    <td data-label="Book" th:text="${request.book.title}">Title</td>
+                    <td data-label="Status">
                         <span class="role-pill" th:text="${request.status}">PENDING</span>
                     </td>
-                    <td th:text="${request.requestedDurationDays + ' days'}">14 days</td>
-                    <td th:text="${#temporals.format(request.requestedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
-                    <td th:text="${request.dueDate != null ? request.dueDate : '—'}">—</td>
-                    <td th:with="overdue=${request.dueDate != null and request.status.name() == 'APPROVED' and request.dueDate.isBefore(T(java.time.LocalDate).now())}">
+                    <td data-label="Requested duration" th:text="${request.requestedDurationDays + ' days'}">14 days</td>
+                    <td data-label="Requested at" th:text="${#temporals.format(request.requestedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
+                    <td data-label="Due date" th:text="${request.dueDate != null ? request.dueDate : '—'}">—</td>
+                    <td data-label="Overdue" th:with="overdue=${request.dueDate != null and request.status.name() == 'APPROVED' and request.dueDate.isBefore(T(java.time.LocalDate).now())}">
                         <span th:if="${overdue}" class="alert alert-error">Overdue</span>
                         <span th:if="${!overdue}" class="muted-note">No</span>
                     </td>

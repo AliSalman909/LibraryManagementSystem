@@ -812,6 +812,51 @@ select:-webkit-autofill:focus {
     background: rgba(255, 255, 255, 0.02);
 }
 
+@media (max-width: 720px) {
+    /* Turn data tables into stacked cards on small screens */
+    .data-table,
+    .data-table thead,
+    .data-table tbody,
+    .data-table th,
+    .data-table td,
+    .data-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table tbody tr {
+        margin-bottom: 0.85rem;
+        padding: 0.65rem 0.55rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.01);
+    }
+
+    .data-table td {
+        border-bottom: none;
+        padding: 0.4rem 0.2rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .data-table td::before {
+        content: attr(data-label);
+        min-width: 7.5rem;
+        flex-shrink: 0;
+        margin-right: 0.25rem;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.78rem;
+    }
+}
+
 .role-pill {
     display: inline-block;
     padding: 0.15rem 0.5rem;
@@ -828,6 +873,20 @@ select:-webkit-autofill:focus {
 
 .actions-cell-wide {
     min-width: 280px;
+}
+
+@media (max-width: 720px) {
+    .actions-cell,
+    .actions-cell-wide {
+        min-width: 0;
+    }
+
+    .actions-cell .inline-action,
+    .actions-cell .status-inline-form,
+    .actions-cell .reject-form {
+        width: 100%;
+        justify-content: flex-start;
+    }
 }
 
 .status-inline-form {
