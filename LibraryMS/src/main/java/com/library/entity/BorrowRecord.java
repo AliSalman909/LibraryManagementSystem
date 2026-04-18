@@ -48,6 +48,18 @@ public class BorrowRecord {
     @Column(name = "returned_at")
     private Instant returnedAt;
 
+    /** Number of times this loan has been renewed. Defaults to 0. */
+    @Column(name = "renew_count", nullable = false)
+    private int renewCount = 0;
+
+    /** Preserved original due date before any renewal extension. Set on first renew. */
+    @Column(name = "original_due_date")
+    private LocalDate originalDueDate;
+
+    /** Timestamp of the most recent renewal. */
+    @Column(name = "last_renewed_at")
+    private Instant lastRenewedAt;
+
     public String getRecordId() {
         return recordId;
     }
@@ -118,5 +130,29 @@ public class BorrowRecord {
 
     public void setReturnedAt(Instant returnedAt) {
         this.returnedAt = returnedAt;
+    }
+
+    public int getRenewCount() {
+        return renewCount;
+    }
+
+    public void setRenewCount(int renewCount) {
+        this.renewCount = renewCount;
+    }
+
+    public LocalDate getOriginalDueDate() {
+        return originalDueDate;
+    }
+
+    public void setOriginalDueDate(LocalDate originalDueDate) {
+        this.originalDueDate = originalDueDate;
+    }
+
+    public Instant getLastRenewedAt() {
+        return lastRenewedAt;
+    }
+
+    public void setLastRenewedAt(Instant lastRenewedAt) {
+        this.lastRenewedAt = lastRenewedAt;
     }
 }

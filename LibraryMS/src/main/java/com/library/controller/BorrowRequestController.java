@@ -64,4 +64,19 @@ public class BorrowRequestController {
         model.addAttribute("requests", borrowRequestService.listForStudent(principal.getUserId()));
         return "student/borrow-requests";
     }
+
+    /** Student cancels their own PENDING borrow request. */
+    @PostMapping("/student/borrow-requests/{requestId}/cancel")
+    public String cancelByStudent(
+            @PathVariable String requestId,
+            @AuthenticationPrincipal LibraryUserDetails principal,
+            RedirectAttributes redirectAttributes) {
+        try {
+            borrowRequestService.cancelByStudent(requestId, principal.getUserId());
+            redirectAttributes.addFlashAttribute("flashSuccess", "Borrow request cancelled.");
+        } catch (BusinessRuleException ex) {
+            redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
+        }
+        return "redirect:/student/borrow-requests";
+    }
 }

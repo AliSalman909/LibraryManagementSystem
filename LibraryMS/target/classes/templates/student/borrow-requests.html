@@ -10,6 +10,9 @@
         <span>My borrow requests</span>
     </nav>
 
+    <div th:if="${flashSuccess}" class="alert alert-success" role="status" th:text="${flashSuccess}">OK</div>
+    <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
+
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Requests</p>
         <h1>My borrow requests</h1>
@@ -25,27 +28,51 @@
                     <th>Requested at</th>
                     <th>Due date</th>
                     <th>Overdue</th>
+                    <th class="actions-cell">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(requests)}">
-                    <td colspan="6" class="empty-state">No borrow requests yet.</td>
+                    <td colspan="7" class="empty-state">No borrow requests yet.</td>
                 </tr>
                 <tr th:each="request : ${requests}">
                     <td data-label="Book" th:text="${request.book.title}">Title</td>
                     <td data-label="Status">
-                        <span class="role-pill" th:text="${request.status}">PENDING</span>
+                        <span th:switch="${request.status.name()}">
+                            <span th:case="'PENDING'" class="status-pill status-pill--pending">Pending</span>
+                            <span th:case="'APPROVED'" class="status-pill status-pill--active">Approved</span>
+                            <span th:case="'REJECTED'" class="status-pill status-pill--overdue">Rejected</span>
+                            <span th:case="'CANCELLED'" class="status-pill status-pill--cancelled">Cancelled</span>
+                        </span>
                     </td>
                     <td data-label="Requested duration" th:text="${request.requestedDurationDays + ' days'}">14 days</td>
                     <td data-label="Requested at" th:text="${#temporals.format(request.requestedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
                     <td data-label="Due date" th:text="${request.dueDate != null ? request.dueDate : '—'}">—</td>
                     <td data-label="Overdue" th:with="overdue=${request.dueDate != null and request.status.name() == 'APPROVED' and request.dueDate.isBefore(T(java.time.LocalDate).now())}">
-                        <span th:if="${overdue}" class="alert alert-error">Overdue</span>
-                        <span th:if="${!overdue}" class="muted-note">No</span>
+                        <span th:if="${overdue}" class="status-pill status-pill--overdue">Overdue</span>
+                        <span th:if="${!overdue}" class="muted-note">—</span>
+                    </td>
+                    <td class="actions-cell">
+                        <th:block th:if="${request.status.name() == 'PENDING'}">
+                            <form class="inline-action"
+                                  th:action="@{/student/borrow-requests/{id}/cancel(id=${request.requestId})}"
+                                  method="post"
+                                  onsubmit="return confirm('Cancel this borrow request?');">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="btn btn-outline btn-sm btn-danger-ghost">Cancel</button>
+                            </form>
+                        </th:block>
+                        <span th:if="${request.status.name() != 'PENDING'}" class="muted-note">—</span>
                     </td>
                 </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="dashboard-actions" style="margin-top:1.5rem;">
+            <a th:href="@{/student/my-loans}" class="btn btn-outline">My Loans</a>
+            <a th:href="@{/student/fines}" class="btn btn-outline">My Fines</a>
+            <a th:href="@{/student/reservations}" class="btn btn-outline">My Reservations</a>
         </div>
     </section>
 </main>

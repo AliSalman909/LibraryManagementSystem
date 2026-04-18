@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Fines — Librarian')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main dashboard-main-wide librarian-borrow-requests-main-wide">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/librarian/dashboard}">Librarian</a>
+        <span aria-hidden="true"> / </span>
+        <span>Fines</span>
+    </nav>
+
+    <div th:if="${flashSuccess}" class="alert alert-success" role="status" th:text="${flashSuccess}">Saved</div>
+    <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Circulation</p>
+        <h1>Fine Management</h1>
+        <p class="lede">Review overdue fines, collect payments, or waive fines with an optional note.</p>
+
+        <!-- Filter tabs -->
+        <div class="dashboard-actions" style="margin-bottom:1rem;">
+            <a th:href="@{/librarian/fines(filter='unpaid')}"
+               th:classappend="${filter == 'unpaid'} ? ' btn-primary' : ' btn-outline'"
+               class="btn btn-sm">Unpaid Only</a>
+            <a th:href="@{/librarian/fines(filter='all')}"
+               th:classappend="${filter == 'all'} ? ' btn-primary' : ' btn-outline'"
+               class="btn btn-sm">All Fines</a>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Days Late</th>
+                    <th>Amount (PKR)</th>
+                    <th>Status</th>
+                    <th>Issued</th>
+                    <th>Resolved By</th>
+                    <th>Notes</th>
+                    <th class="actions-cell" th:if="${filter == 'unpaid'}">Actions</th>
+                    <th class="actions-cell" th:if="${filter != 'unpaid'}">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(fines)}">
+                    <td colspan="9" class="empty-state">No fines found.</td>
+                </tr>
+                <tr th:each="fine : ${fines}">
+                    <td class="student-col">
+                        <div class="student-name" th:text="${fine.student.user.fullName}">Student</div>
+                        <div class="muted-note cell-mono student-id-cell">
+                            <span th:text="${fine.student.user.email}">email</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div th:text="${fine.borrowRecord.book.title}">Book</div>
+                        <div class="muted-note" th:text="'Due: ' + ${fine.borrowRecord.dueDate}">Due date</div>
+                    </td>
+                    <td th:text="${fine.daysLate}">3</td>
+                    <td th:text="${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')}">30.00</td>
+                    <td>
+                        <span th:switch="${fine.status.name()}">
+                            <span th:case="'UNPAID'" class="status-pill status-pill--overdue">Unpaid</span>
+                            <span th:case="'PAID'" class="status-pill status-pill--active">Paid</span>
+                            <span th:case="'WAIVED'" class="status-pill status-pill--waived">Waived</span>
+                        </span>
+                    </td>
+                    <td th:text="${#temporals.format(fine.issuedAt, 'yyyy-MM-dd', #locale)}">2026-01-01</td>
+                    <td th:text="${fine.resolvedBy != null ? fine.resolvedBy.user.fullName : '—'}">—</td>
+                    <td th:text="${fine.notes != null ? fine.notes : '—'}">—</td>
+                    <td class="actions-cell">
+                        <th:block th:if="${fine.status.name() == 'UNPAID'}">
+                            <!-- Mark Paid form -->
+                            <form class="inline-action fine-action-form"
+                                  th:action="@{/librarian/fines/{id}/mark-paid(id=${fine.fineId})}"
+                                  method="post">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <input type="text" name="notes" class="input fine-notes-input"
+                                       placeholder="Payment note (optional)" maxlength="500"/>
+                                <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.35rem;">
+                                    Mark Paid
+                                </button>
+                            </form>
+                            <!-- Waive form -->
+                            <form class="inline-action fine-action-form"
+                                  th:action="@{/librarian/fines/{id}/waive(id=${fine.fineId})}"
+                                  method="post"
+                                  style="margin-top:0.5rem;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <input type="text" name="notes" class="input fine-notes-input"
+                                       placeholder="Waiver reason (optional)" maxlength="500"/>
+                                <button type="submit" class="btn btn-outline btn-sm btn-danger-ghost"
+                                        style="margin-top:0.35rem;">
+                                    Waive
+                                </button>
+                            </form>
+                        </th:block>
+                        <span th:if="${fine.status.name() != 'UNPAID'}" class="muted-note">—</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dashboard-actions" style="margin-top:1.5rem;">
+            <a th:href="@{/librarian/active-loans}" class="btn btn-outline">← Active Loans</a>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

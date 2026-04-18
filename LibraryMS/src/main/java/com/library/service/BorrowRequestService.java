@@ -199,6 +199,24 @@ public class BorrowRequestService {
         borrowRequestRepository.save(request);
     }
 
+    /**
+     * Student cancels their own PENDING borrow request.
+     */
+    @Transactional
+    public void cancelByStudent(String requestId, String studentUserId) {
+        BorrowRequest request = borrowRequestRepository.findById(requestId)
+                .orElseThrow(() -> new BusinessRuleException("Borrow request not found."));
+        if (!request.getStudent().getUserId().equals(studentUserId)) {
+            throw new BusinessRuleException("You can only cancel your own requests.");
+        }
+        if (request.getStatus() != BorrowRequestStatus.PENDING) {
+            throw new BusinessRuleException("Only pending requests can be cancelled.");
+        }
+        request.setStatus(BorrowRequestStatus.CANCELLED);
+        request.setReviewedAt(Instant.now());
+        borrowRequestRepository.save(request);
+    }
+
     private LocalDate resolveDueDate(LocalDate dueDate, Integer durationDays) {
         LocalDate today = LocalDate.now();
         if (dueDate != null) {

@@ -58,4 +58,15 @@ public interface BookRepository extends JpaRepository<Book, String> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select b from Book b where b.bookId = :id")
     Optional<Book> findByIdForUpdate(@Param("id") String id);
+
+    @Modifying
+    @Query("""
+            update Book b
+            set b.availableCopies = b.availableCopies + 1,
+                b.updatedAt = :updatedAt
+            where b.bookId = :bookId
+            """)
+    int incrementAvailableCopies(
+            @Param("bookId") String bookId,
+            @Param("updatedAt") Instant updatedAt);
 }

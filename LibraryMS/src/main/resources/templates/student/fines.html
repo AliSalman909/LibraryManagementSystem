@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='My Fines — Student')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main student-requests-main-wide">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/student/dashboard}">Student</a>
+        <span aria-hidden="true"> / </span>
+        <span>My Fines</span>
+    </nav>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Account</p>
+        <h1>My Fines</h1>
+        <p class="lede">Fines are issued when books are returned after the due date. Visit the library to pay outstanding fines.</p>
+
+        <!-- Outstanding balance summary card -->
+        <div th:if="${outstandingTotal != null and outstandingTotal.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+             class="alert alert-warn" role="alert" style="margin-bottom:1.25rem;">
+            <strong>Outstanding balance:</strong>
+            PKR <span th:text="${#numbers.formatDecimal(outstandingTotal, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+            — Please visit the library desk to settle this amount.
+        </div>
+
+        <div th:if="${outstandingTotal != null and outstandingTotal.compareTo(T(java.math.BigDecimal).ZERO) == 0 and not #lists.isEmpty(fines)}"
+             class="alert alert-success" role="status">
+            All fines have been settled. Great job keeping up with returns!
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Due Date</th>
+                    <th>Days Late</th>
+                    <th>Amount (PKR)</th>
+                    <th>Status</th>
+                    <th>Issued</th>
+                    <th>Notes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(fines)}">
+                    <td colspan="7" class="empty-state">You have no fines. Keep returning books on time! 🎉</td>
+                </tr>
+                <tr th:each="fine : ${fines}">
+                    <td data-label="Book" th:text="${fine.borrowRecord.book.title}">Book Title</td>
+                    <td data-label="Due Date" th:text="${fine.borrowRecord.dueDate}">2026-01-15</td>
+                    <td data-label="Days Late" th:text="${fine.daysLate}">3</td>
+                    <td data-label="Amount">
+                        PKR <span th:text="${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')}">30.00</span>
+                    </td>
+                    <td data-label="Status">
+                        <span th:switch="${fine.status.name()}">
+                            <span th:case="'UNPAID'" class="status-pill status-pill--overdue">Unpaid</span>
+                            <span th:case="'PAID'" class="status-pill status-pill--active">Paid</span>
+                            <span th:case="'WAIVED'" class="status-pill status-pill--waived">Waived</span>
+                        </span>
+                    </td>
+                    <td data-label="Issued" th:text="${#temporals.format(fine.issuedAt, 'yyyy-MM-dd', #locale)}">2026-01-16</td>
+                    <td data-label="Notes" th:text="${fine.notes != null ? fine.notes : '—'}">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dashboard-actions" style="margin-top:1.5rem;">
+            <a th:href="@{/student/borrow-requests}" class="btn btn-outline">← My Borrow Requests</a>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>
