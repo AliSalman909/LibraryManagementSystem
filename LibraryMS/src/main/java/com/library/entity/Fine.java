@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -65,6 +66,10 @@ public class Fine {
     /** Optional librarian note added on resolution (e.g. reason for waiver). */
     @Column(name = "notes", length = 500)
     private String notes;
+
+    /** Amount adjusted/waived from the original fine (PKR). */
+    @Column(name = "waived_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal waivedAmount = BigDecimal.ZERO;
 
     // -----------------------------------------------------------------------
     // Getters & setters
@@ -148,5 +153,28 @@ public class Fine {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public BigDecimal getWaivedAmount() {
+        return waivedAmount;
+    }
+
+    public void setWaivedAmount(BigDecimal waivedAmount) {
+        this.waivedAmount = waivedAmount;
+    }
+
+    public BigDecimal getNetAmount() {
+        BigDecimal waived = waivedAmount == null ? BigDecimal.ZERO : waivedAmount;
+        BigDecimal net = amount.subtract(waived);
+        return net.max(BigDecimal.ZERO);
+    }
+
+    @Transient
+    public long getReceiptIdNumeric() {
+        if (fineId == null) {
+            return 0L;
+        }
+        long hash = Integer.toUnsignedLong(fineId.hashCode());
+        return 100000000L + (hash % 900000000L);
     }
 }

@@ -5,6 +5,7 @@ import com.library.exception.BusinessRuleException;
 import com.library.messages.UserFacingMessages;
 import com.library.security.LibraryUserDetails;
 import com.library.service.FineService;
+import java.math.BigDecimal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,44 +33,63 @@ public class LibrarianFineController {
     public String listFines(
             @RequestParam(name = "filter", defaultValue = "unpaid") String filter,
             Model model) {
-        boolean showAll = "all".equalsIgnoreCase(filter);
-        model.addAttribute("fines", showAll ? fineService.listAllFines() : fineService.listUnpaidFines());
-        model.addAttribute("filter", showAll ? "all" : "unpaid");
+        model.addAttribute("fines", fineService.listFinesByFilter(filter));
+        model.addAttribute("unpaidFinesForReceipt", fineService.listFinesByFilter("unpaid"));
+        model.addAttribute("liveOverdueLoans", fineService.listLiveOverdueLoans());
+        model.addAttribute("filter", normalizeFilter(filter));
         model.addAttribute("FineStatus", FineStatus.class); // expose enum to template
         return "librarian/fines";
     }
 
-    /** Mark a fine as PAID. */
-    @PostMapping("/librarian/fines/{fineId}/mark-paid")
-    public String markPaid(
+    @PostMapping("/librarian/fines/{fineId}/status")
+    public String updateStatus(
             @PathVariable String fineId,
+            @RequestParam("status") FineStatus status,
             @RequestParam(name = "notes", required = false) String notes,
             @AuthenticationPrincipal LibraryUserDetails principal,
             RedirectAttributes redirectAttributes) {
         try {
-            fineService.markPaid(fineId, principal.getUserId(), notes);
-            redirectAttributes.addFlashAttribute("flashSuccess", "Fine marked as paid.");
+            fineService.updateStatus(fineId, status, principal.getUserId(), notes, null);
+            redirectAttributes.addFlashAttribute("flashSuccess", "Fine status updated.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError",
                     UserFacingMessages.orGeneric(ex.getMessage()));
         }
-        return "redirect:/librarian/fines";
+        return "redirect:/librarian/fines?filter=" + normalizeFilter(status.name().toLowerCase());
     }
 
-    /** Waive a fine. */
-    @PostMapping("/librarian/fines/{fineId}/waive")
-    public String waive(
+    @PostMapping("/librarian/fines/{fineId}/waived-adjustment")
+    public String updateWaivedAdjustment(
             @PathVariable String fineId,
-            @RequestParam(name = "notes", required = false) String notes,
-            @AuthenticationPrincipal LibraryUserDetails principal,
+            @RequestParam(name = "waivedAdjustment", required = false) BigDecimal waivedAdjustment,
             RedirectAttributes redirectAttributes) {
         try {
-            fineService.waive(fineId, principal.getUserId(), notes);
-            redirectAttributes.addFlashAttribute("flashSuccess", "Fine waived.");
+            fineService.updateWaivedAdjustment(fineId, waivedAdjustment);
+            redirectAttributes.addFlashAttribute("flashSuccess", "Waived adjustment updated.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError",
                     UserFacingMessages.orGeneric(ex.getMessage()));
         }
-        return "redirect:/librarian/fines";
+        return "redirect:/librarian/fines?filter=unpaid";
     }
+
+    @GetMapping("/librarian/fines/{fineId}/receipt")
+    public String viewReceipt(@PathVariable String fineId, Model model) {
+        var fine = fineService.getFineByIdWithDetails(fineId);
+        model.addAttribute("fine", fine);
+        model.addAttribute("receiptFileName", fine.getStudent().getUserId() + "-receipt");
+        return "librarian/fine-receipt";
+    }
+
+    private String normalizeFilter(String filter) {
+        if (filter == null || filter.isBlank()) {
+            return "unpaid";
+        }
+        String lowered = filter.toLowerCase();
+        return switch (lowered) {
+            case "unpaid", "paid", "waived", "all" -> lowered;
+            default -> "unpaid";
+        };
+    }
+
 }

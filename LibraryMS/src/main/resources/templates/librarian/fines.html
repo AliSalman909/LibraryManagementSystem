@@ -14,99 +14,135 @@
     <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
 
     <section class="dashboard-hero card-elevated">
-        <p class="eyebrow">Circulation</p>
-        <h1>Fine Management</h1>
-        <p class="lede">Review overdue fines, collect payments, or waive fines with an optional note.</p>
-
-        <!-- Filter tabs -->
-        <div class="dashboard-actions" style="margin-bottom:1rem;">
-            <a th:href="@{/librarian/fines(filter='unpaid')}"
-               th:classappend="${filter == 'unpaid'} ? ' btn-primary' : ' btn-outline'"
-               class="btn btn-sm">Unpaid Only</a>
-            <a th:href="@{/librarian/fines(filter='all')}"
-               th:classappend="${filter == 'all'} ? ' btn-primary' : ' btn-outline'"
-               class="btn btn-sm">All Fines</a>
+        <p class="eyebrow">Section 1</p>
+        <h1>Receipt Printing (Unpaid Fines Only)</h1>
+        <p class="lede">Receipts are available only while the fine is unpaid. Receipt opens in a new tab and can be saved via browser print.</p>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Receipt ID</th>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Total Fine</th>
+                    <th>Waived Adjustment</th>
+                    <th>Net Amount</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(unpaidFinesForReceipt)}">
+                    <td colspan="7" class="empty-state">No unpaid receipts to print.</td>
+                </tr>
+                <tr th:each="fine : ${unpaidFinesForReceipt}">
+                    <td th:text="${fine.receiptIdNumeric}">100000001</td>
+                    <td>
+                        <div th:text="${fine.student.user.fullName}">Student</div>
+                        <div class="muted-note cell-mono" th:text="${fine.student.userId}">STD001</div>
+                    </td>
+                    <td th:text="${fine.borrowRecord.book.title}">Book</td>
+                    <td th:text="${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
+                    <td>
+                        <form th:action="@{/librarian/fines/{id}/waived-adjustment(id=${fine.fineId})}" method="post" class="inline-action fine-action-form">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="number" name="waivedAdjustment" min="0" step="0.01" class="input fine-notes-input"
+                                   th:value="${fine.waivedAmount}" style="max-width:140px;"/>
+                            <button type="submit" class="btn btn-outline btn-sm" style="margin-top:0.35rem;">Apply</button>
+                        </form>
+                    </td>
+                    <td th:text="${#numbers.formatDecimal(fine.netAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
+                    <td>
+                        <a class="btn btn-primary btn-sm" target="_blank"
+                           th:href="@{/librarian/fines/{id}/receipt(id=${fine.fineId})}">Print Receipt</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
+    </section>
 
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Section 2</p>
+        <h2>Live Overdue Books</h2>
+        <p class="lede">These are currently overdue and not yet returned. When returned, they move out of this list and into fine status management.</p>
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                 <tr>
                     <th>Student</th>
                     <th>Book</th>
-                    <th>Days Late</th>
-                    <th>Amount (PKR)</th>
-                    <th>Status</th>
-                    <th>Issued</th>
-                    <th>Resolved By</th>
-                    <th>Notes</th>
-                    <th class="actions-cell" th:if="${filter == 'unpaid'}">Actions</th>
-                    <th class="actions-cell" th:if="${filter != 'unpaid'}">Actions</th>
+                    <th>Due Date</th>
+                    <th>Per-Day Fine</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(fines)}">
-                    <td colspan="9" class="empty-state">No fines found.</td>
+                <tr th:if="${#lists.isEmpty(liveOverdueLoans)}">
+                    <td colspan="4" class="empty-state">No live overdue books right now.</td>
                 </tr>
-                <tr th:each="fine : ${fines}">
-                    <td class="student-col">
-                        <div class="student-name" th:text="${fine.student.user.fullName}">Student</div>
-                        <div class="muted-note cell-mono student-id-cell">
-                            <span th:text="${fine.student.user.email}">email</span>
-                        </div>
+                <tr th:each="loan : ${liveOverdueLoans}">
+                    <td>
+                        <div th:text="${loan.student.user.fullName}">Student</div>
+                        <div class="muted-note cell-mono" th:text="${loan.student.userId}">STD001</div>
                     </td>
                     <td>
-                        <div th:text="${fine.borrowRecord.book.title}">Book</div>
-                        <div class="muted-note" th:text="'Due: ' + ${fine.borrowRecord.dueDate}">Due date</div>
+                        <div th:text="${loan.book.title}">Book</div>
+                        <div class="muted-note" th:text="${loan.book.bookId}">BK001</div>
                     </td>
-                    <td th:text="${fine.daysLate}">3</td>
-                    <td th:text="${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')}">30.00</td>
-                    <td>
-                        <span th:switch="${fine.status.name()}">
-                            <span th:case="'UNPAID'" class="status-pill status-pill--overdue">Unpaid</span>
-                            <span th:case="'PAID'" class="status-pill status-pill--active">Paid</span>
-                            <span th:case="'WAIVED'" class="status-pill status-pill--waived">Waived</span>
-                        </span>
-                    </td>
-                    <td th:text="${#temporals.format(fine.issuedAt, 'yyyy-MM-dd', #locale)}">2026-01-01</td>
-                    <td th:text="${fine.resolvedBy != null ? fine.resolvedBy.user.fullName : '—'}">—</td>
-                    <td th:text="${fine.notes != null ? fine.notes : '—'}">—</td>
-                    <td class="actions-cell">
-                        <th:block th:if="${fine.status.name() == 'UNPAID'}">
-                            <!-- Mark Paid form -->
-                            <form class="inline-action fine-action-form"
-                                  th:action="@{/librarian/fines/{id}/mark-paid(id=${fine.fineId})}"
-                                  method="post">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <input type="text" name="notes" class="input fine-notes-input"
-                                       placeholder="Payment note (optional)" maxlength="500"/>
-                                <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.35rem;">
-                                    Mark Paid
-                                </button>
-                            </form>
-                            <!-- Waive form -->
-                            <form class="inline-action fine-action-form"
-                                  th:action="@{/librarian/fines/{id}/waive(id=${fine.fineId})}"
-                                  method="post"
-                                  style="margin-top:0.5rem;">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                                <input type="text" name="notes" class="input fine-notes-input"
-                                       placeholder="Waiver reason (optional)" maxlength="500"/>
-                                <button type="submit" class="btn btn-outline btn-sm btn-danger-ghost"
-                                        style="margin-top:0.35rem;">
-                                    Waive
-                                </button>
-                            </form>
-                        </th:block>
-                        <span th:if="${fine.status.name() != 'UNPAID'}" class="muted-note">—</span>
-                    </td>
+                    <td th:text="${loan.dueDate}">2026-01-01</td>
+                    <td th:text="${loan.book.finePerDayPkr + ' PKR/day'}">50 PKR/day</td>
                 </tr>
                 </tbody>
             </table>
         </div>
+    </section>
 
-        <div class="dashboard-actions" style="margin-top:1.5rem;">
-            <a th:href="@{/librarian/active-loans}" class="btn btn-outline">← Active Loans</a>
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Section 3</p>
+        <h2>Fine Status Management</h2>
+        <p class="lede">Update status and add one optional note. Receipts remain available only for unpaid fines.</p>
+        <div class="dashboard-actions" style="margin-bottom:1rem;">
+            <a th:href="@{/librarian/fines(filter='unpaid')}" th:classappend="${filter == 'unpaid'} ? ' btn-primary' : ' btn-outline'" class="btn btn-sm">Unpaid</a>
+            <a th:href="@{/librarian/fines(filter='paid')}" th:classappend="${filter == 'paid'} ? ' btn-primary' : ' btn-outline'" class="btn btn-sm">Paid</a>
+            <a th:href="@{/librarian/fines(filter='waived')}" th:classappend="${filter == 'waived'} ? ' btn-primary' : ' btn-outline'" class="btn btn-sm">Waived</a>
+            <a th:href="@{/librarian/fines(filter='all')}" th:classappend="${filter == 'all'} ? ' btn-primary' : ' btn-outline'" class="btn btn-sm">All</a>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Total Fine</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>Update</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(fines)}">
+                    <td colspan="6" class="empty-state">No fines found for this filter.</td>
+                </tr>
+                <tr th:each="fine : ${fines}">
+                    <td th:text="${fine.student.user.fullName + ' (' + fine.student.userId + ')'}">Student</td>
+                    <td th:text="${fine.borrowRecord.book.title}">Book</td>
+                    <td th:text="${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
+                    <td th:text="${fine.status.name()}">UNPAID</td>
+                    <td th:text="${fine.notes != null ? fine.notes : '—'}">—</td>
+                    <td class="actions-cell">
+                        <form class="inline-action fine-action-form" th:action="@{/librarian/fines/{id}/status(id=${fine.fineId})}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <select name="status" class="input fine-notes-input" style="max-width: 180px;">
+                                <option value="UNPAID" th:selected="${fine.status.name() == 'UNPAID'}">Unpaid</option>
+                                <option value="PAID" th:selected="${fine.status.name() == 'PAID'}">Paid</option>
+                                <option value="WAIVED" th:selected="${fine.status.name() == 'WAIVED'}">Waived</option>
+                            </select>
+                            <input type="text" name="notes" class="input fine-notes-input" placeholder="Optional note" maxlength="500" th:value="${fine.notes}"/>
+                            <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.35rem;">Save</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </main>

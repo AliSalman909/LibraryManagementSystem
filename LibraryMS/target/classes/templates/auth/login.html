@@ -72,5 +72,20 @@
 
 <footer th:replace="~{fragments/layout :: site-footer}"></footer>
 <script th:src="@{/js/auth.js}" defer></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".toggle-password").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var targetId = btn.getAttribute("data-toggle-target");
+                var input = targetId ? document.getElementById(targetId) : null;
+                if (!input) return;
+                var show = input.type === "password";
+                input.type = show ? "text" : "password";
+                btn.textContent = show ? "Hide" : "Show";
+                btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+            });
+        });
+    });
+</script>
 </body>
 </html>

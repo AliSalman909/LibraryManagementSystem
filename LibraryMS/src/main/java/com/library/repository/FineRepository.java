@@ -3,6 +3,7 @@ package com.library.repository;
 import com.library.entity.Fine;
 import com.library.entity.enums.FineStatus;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,6 +36,8 @@ public interface FineRepository extends JpaRepository<Fine, String> {
             join fetch r.book
             join fetch f.student s
             join fetch s.user
+            left join fetch f.resolvedBy lb
+            left join fetch lb.user
             where f.status = :status
             order by f.issuedAt asc
             """)
@@ -54,6 +57,18 @@ public interface FineRepository extends JpaRepository<Fine, String> {
             order by f.issuedAt desc
             """)
     List<Fine> findAllWithDetailsOrderByIssuedAtDesc();
+
+    @Query("""
+            select f from Fine f
+            join fetch f.borrowRecord r
+            join fetch r.book
+            join fetch f.student s
+            join fetch s.user
+            left join fetch f.resolvedBy lb
+            left join fetch lb.user
+            where f.fineId = :fineId
+            """)
+    Optional<Fine> findByIdWithDetails(@Param("fineId") String fineId);
 
     /** Check if a student has any fine in a given status (used as renewal blocker). */
     boolean existsByStudentUserIdAndStatus(String studentUserId, FineStatus status);

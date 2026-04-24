@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${receiptFileName}">Fine Receipt</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f6f8fb; color: #1f2937; }
+        .receipt-wrap { max-width: 900px; margin: 2rem auto; background: #fff; border: 1px solid #dbe2ea; border-radius: 10px; padding: 0.9rem; box-sizing: border-box; }
+        .brand-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #111827; padding-bottom: 0.75rem; margin-bottom: 1rem; }
+        .brand-left { display: flex; align-items: center; gap: 0.75rem; }
+        .brand-logo { width: 44px; height: 44px; border-radius: 8px; background: #111827; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+        .brand-title { margin: 0; font-size: 1.1rem; font-weight: 700; }
+        .brand-sub { margin: 0.15rem 0 0; font-size: 0.82rem; color: #6b7280; }
+        .top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+        .title { margin: 0; font-size: 1.28rem; }
+        .subtle { color: #6b7280; font-size: 0.86rem; }
+        .stamp { border: 2px solid #991b1b; color: #991b1b; font-weight: 700; border-radius: 6px; padding: 0.35rem 0.6rem; transform: rotate(-8deg); letter-spacing: 0.04em; }
+        .stamp.paid { border-color: #065f46; color: #065f46; }
+        .stamp.waived { border-color: #1e40af; color: #1e40af; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 1rem; margin-top: 0.8rem; }
+        .label { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.15rem; }
+        .value { font-weight: 600; }
+        .summary { margin-top: 0.8rem; border-top: 1px solid #e5e7eb; padding-top: 0.75rem; }
+        .summary-row { display: flex; justify-content: space-between; margin: 0.25rem 0; }
+        .summary-row.total { font-size: 1rem; font-weight: 700; }
+        .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.2rem; }
+        .signature-box { border-top: 1px solid #111827; padding-top: 0.35rem; font-size: 0.85rem; color: #374151; }
+        .receipt-footer { margin-top: 1rem; font-size: 0.8rem; color: #6b7280; border-top: 1px dashed #cbd5e1; padding-top: 0.7rem; }
+        .actions { margin-top: 0.9rem; display: flex; gap: 0.5rem; }
+        .btn { text-decoration: none; border: 1px solid #d1d5db; padding: 0.5rem 0.8rem; border-radius: 6px; color: #111827; background: #fff; }
+        .btn-primary { background: #111827; color: #fff; border-color: #111827; }
+        @media print {
+            body { background: #fff; }
+            @page { size: A4 portrait; margin: 8mm; }
+            .receipt-wrap {
+                width: 100%;
+                height: calc(148.5mm - 16mm);
+                max-height: calc(148.5mm - 16mm);
+                margin: 0;
+                border: 1px solid #111827;
+                border-radius: 0;
+                padding: 7mm;
+                overflow: hidden;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            .actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="receipt-wrap">
+    <section class="brand-bar">
+        <div class="brand-left">
+            <div class="brand-logo">LMS</div>
+            <div>
+                <p class="brand-title">Library Management System</p>
+            </div>
+        </div>
+        <div class="subtle">Official Financial Receipt</div>
+    </section>
+
+    <div class="top-row">
+        <div>
+            <h1 class="title">Library Fine Receipt</h1>
+            <div class="subtle" th:text="'Receipt ID: ' + ${fine.receiptIdNumeric}">Receipt ID</div>
+        </div>
+        <div>
+            <div class="subtle" th:text="'Issued: ' + ${#temporals.format(fine.issuedAt, 'yyyy-MM-dd HH:mm', #locale)}">Issued</div>
+            <div class="stamp"
+                 th:classappend="${fine.status.name() == 'PAID'} ? ' paid' : (${fine.status.name() == 'WAIVED'} ? ' waived' : '')"
+                 th:text="${fine.status.name()}">UNPAID</div>
+        </div>
+    </div>
+
+    <section class="grid">
+        <div>
+            <div class="label">Student Name</div>
+            <div class="value" th:text="${fine.student.user.fullName}">Student Name</div>
+        </div>
+        <div>
+            <div class="label">Student ID</div>
+            <div class="value" th:text="${fine.student.userId}">STD001</div>
+        </div>
+        <div>
+            <div class="label">Student Email</div>
+            <div class="value" th:text="${fine.student.user.email}">student@example.com</div>
+        </div>
+        <div>
+            <div class="label">Book</div>
+            <div class="value" th:text="${fine.borrowRecord.book.title}">Book</div>
+        </div>
+        <div>
+            <div class="label">Book ID</div>
+            <div class="value" th:text="${fine.borrowRecord.book.bookId}">BK001</div>
+        </div>
+        <div>
+            <div class="label">Days Late</div>
+            <div class="value" th:text="${fine.daysLate}">3</div>
+        </div>
+        <div>
+            <div class="label">Status</div>
+            <div class="value" th:text="${fine.status.name()}">UNPAID</div>
+        </div>
+        <div>
+            <div class="label">Librarian</div>
+            <div class="value" th:text="${fine.resolvedBy != null ? fine.resolvedBy.user.fullName : '—'}">—</div>
+        </div>
+        <div>
+            <div class="label">Notes</div>
+            <div class="value" th:text="${fine.notes != null ? fine.notes : '—'}">—</div>
+        </div>
+    </section>
+
+    <section class="summary">
+        <div class="summary-row">
+            <span>Total Fine</span>
+            <strong th:text="${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</strong>
+        </div>
+        <div class="summary-row">
+            <span>Waived Adjustment</span>
+            <strong th:text="${#numbers.formatDecimal(fine.waivedAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</strong>
+        </div>
+        <div class="summary-row total">
+            <span>Net Amount</span>
+            <strong th:text="${#numbers.formatDecimal(fine.netAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</strong>
+        </div>
+    </section>
+
+    <section class="signature-grid">
+        <div class="signature-box">
+            Student Signature
+        </div>
+        <div class="signature-box">
+            Librarian Signature
+        </div>
+    </section>
+
+    <section class="receipt-footer">
+        This receipt is generated by the Library Management System. Keep this record for audit and student account reconciliation.
+    </section>
+
+    <div class="actions">
+        <a class="btn btn-primary" href="javascript:window.print()">Print Receipt</a>
+        <a class="btn" th:href="@{/librarian/fines(filter='unpaid')}">Back to Fines</a>
+    </div>
+</main>
+</body>
+</html>

@@ -2,7 +2,6 @@ package com.library.service;
 
 import com.library.entity.BorrowRecord;
 import com.library.entity.Fine;
-import com.library.entity.Librarian;
 import com.library.entity.enums.FineStatus;
 import com.library.exception.BusinessRuleException;
 import com.library.repository.BookRepository;
@@ -98,8 +97,9 @@ public class ReturnService {
             throw new BusinessRuleException("A fine already exists for this borrow record.");
         }
 
-        Librarian librarian = librarianRepository.findByUserIdWithUser(librarianUserId)
-                .orElseThrow(() -> new BusinessRuleException("Librarian account not found."));
+        if (librarianRepository.findByUserIdWithUser(librarianUserId).isEmpty()) {
+            throw new BusinessRuleException("Librarian account not found.");
+        }
 
         BigDecimal amount = BigDecimal.valueOf(daysLate * (long) record.getBook().getFinePerDayPkr())
                 .setScale(2, RoundingMode.HALF_UP);
@@ -112,7 +112,8 @@ public class ReturnService {
         fine.setDaysLate((int) daysLate);
         fine.setStatus(FineStatus.UNPAID);
         fine.setIssuedAt(now);
-        fine.setResolvedBy(librarian); // issuing librarian tracks who processed the return
+        // This field is only for paid/waived actions.
+        fine.setResolvedBy(null);
 
         return fineRepository.save(fine);
     }

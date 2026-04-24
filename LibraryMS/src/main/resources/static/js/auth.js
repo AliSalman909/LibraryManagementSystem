@@ -1,16 +1,28 @@
 (function () {
     "use strict";
 
+    function togglePasswordForButton(btn) {
+        var id = btn.getAttribute("data-toggle-target");
+        var input = id && document.getElementById(id);
+        if (!input) return;
+        var show = input.getAttribute("type") === "password";
+        input.setAttribute("type", show ? "text" : "password");
+        btn.textContent = show ? "Hide" : "Show";
+        btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+    }
+
     document.querySelectorAll(".toggle-password").forEach(function (btn) {
         btn.addEventListener("click", function () {
-            var id = btn.getAttribute("data-toggle-target");
-            var input = id && document.getElementById(id);
-            if (!input) return;
-            var show = input.getAttribute("type") === "password";
-            input.setAttribute("type", show ? "text" : "password");
-            btn.textContent = show ? "Hide" : "Show";
-            btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+            togglePasswordForButton(btn);
         });
+    });
+
+    // Delegated fallback for pages where JS may initialize before dynamic DOM updates.
+    document.addEventListener("click", function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest(".toggle-password") : null;
+        if (!btn) return;
+        e.preventDefault();
+        togglePasswordForButton(btn);
     });
 
     function rolePanelsSync() {
