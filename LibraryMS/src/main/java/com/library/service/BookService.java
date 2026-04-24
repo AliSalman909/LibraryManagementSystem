@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.Objects;
+import java.math.BigDecimal;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,10 +27,17 @@ public class BookService {
     /** Five unambiguous characters shown to librarians. */
     private static final String PLAIN_BOOK_ID_ALPHABET = Book.PLAIN_BOOK_ID_ALPHABET;
     private static final int PLAIN_BOOK_ID_LENGTH = Book.PLAIN_BOOK_ID_LENGTH;
+    private static final int DEFAULT_FINE_PER_DAY_PKR = 50;
 
     public BookService(BookRepository bookRepository, BookCopyRepository bookCopyRepository) {
         this.bookRepository = bookRepository;
         this.bookCopyRepository = bookCopyRepository;
+    }
+
+    @PostConstruct
+    @Transactional
+    public void backfillDefaultFinePerDay() {
+        bookRepository.backfillMissingFinePerDay(DEFAULT_FINE_PER_DAY_PKR);
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +85,9 @@ public class BookService {
         book.setIsbn(baseIsbn);
         book.setTotalCopies(form.getTotalCopies());
         book.setAvailableCopies(form.getTotalCopies());
+        int finePerDayPkr = requireFinePerDay(bookFormFine(form));
+        book.setFinePerDayPkr(finePerDayPkr);
+        book.setFinePerDay(BigDecimal.valueOf(finePerDayPkr));
         book.setCreatedAt(Instant.now());
         book.setUpdatedAt(Instant.now());
         Book saved = bookRepository.save(book);
@@ -123,6 +135,9 @@ public class BookService {
         book.setCategory(newCategory);
         book.setIsbn(newBaseIsbn);
         book.setTotalCopies(form.getTotalCopies());
+        int finePerDayPkr = requireFinePerDay(bookFormFine(form));
+        book.setFinePerDayPkr(finePerDayPkr);
+        book.setFinePerDay(BigDecimal.valueOf(finePerDayPkr));
         int newAvailableCopies = form.getTotalCopies() - activeBorrowedCopies;
         book.setAvailableCopies(newAvailableCopies);
         book.setUpdatedAt(Instant.now());
@@ -245,5 +260,19 @@ public class BookService {
 
     private static String normalizeOptional(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private int bookFormFine(BookForm form) {
+        if (form.getFinePerDayPkr() == null) {
+            throw new BusinessRuleException("Fine per day is required.");
+        }
+        return form.getFinePerDayPkr();
+    }
+
+    private int requireFinePerDay(int finePerDayPkr) {
+        if (finePerDayPkr < 1) {
+            throw new BusinessRuleException("Fine per day must be at least 1 PKR.");
+        }
+        return finePerDayPkr;
     }
 }

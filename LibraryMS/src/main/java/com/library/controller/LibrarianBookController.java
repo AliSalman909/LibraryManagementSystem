@@ -5,6 +5,8 @@ import com.library.exception.BusinessRuleException;
 import com.library.messages.UserFacingMessages;
 import com.library.service.BookService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -19,6 +21,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/librarian/books")
 public class LibrarianBookController {
 
+    private static final Logger log = LoggerFactory.getLogger(LibrarianBookController.class);
     private final BookService bookService;
 
     public LibrarianBookController(BookService bookService) {
@@ -31,6 +34,7 @@ public class LibrarianBookController {
         if (!model.containsAttribute("bookForm")) {
             BookForm form = new BookForm();
             form.setTotalCopies(1);
+            form.setFinePerDayPkr(50);
             model.addAttribute("bookForm", form);
         }
         return "librarian/books";
@@ -54,6 +58,11 @@ public class LibrarianBookController {
             model.addAttribute("books", bookService.listAll());
             model.addAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
             return "librarian/books";
+        } catch (Exception ex) {
+            log.error("Unexpected error while creating book", ex);
+            model.addAttribute("books", bookService.listAll());
+            model.addAttribute("flashError", UserFacingMessages.GENERIC_TRY_AGAIN);
+            return "librarian/books";
         }
     }
 
@@ -65,6 +74,7 @@ public class LibrarianBookController {
         form.setAuthor(book.getAuthor());
         form.setCategory(book.getCategory());
         form.setTotalCopies(book.getTotalCopies());
+        form.setFinePerDayPkr(book.getFinePerDayPkr());
         model.addAttribute("bookId", book.getBookId());
         model.addAttribute("bookForm", form);
         return "librarian/book-edit";
@@ -88,6 +98,11 @@ public class LibrarianBookController {
         } catch (BusinessRuleException ex) {
             model.addAttribute("bookId", bookId);
             model.addAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
+            return "librarian/book-edit";
+        } catch (Exception ex) {
+            log.error("Unexpected error while updating book {}", bookId, ex);
+            model.addAttribute("bookId", bookId);
+            model.addAttribute("flashError", UserFacingMessages.GENERIC_TRY_AGAIN);
             return "librarian/book-edit";
         }
     }

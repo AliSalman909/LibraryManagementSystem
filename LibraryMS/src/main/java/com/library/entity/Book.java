@@ -9,6 +9,7 @@ import jakarta.persistence.UniqueConstraint;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.Instant;
+import java.math.BigDecimal;
 
 @Entity
 @Table(
@@ -48,6 +49,16 @@ public class Book {
 
     @Column(name = "available_copies", nullable = false)
     private int availableCopies;
+
+    @Column(name = "fine_per_day_pkr", nullable = false)
+    private int finePerDayPkr = 50;
+
+    /**
+     * Legacy column kept for existing schemas.
+     * Mirrors finePerDayPkr (1 PKR == 1.00 in this column).
+     */
+    @Column(name = "fine_per_day", nullable = false, precision = 10, scale = 2)
+    private BigDecimal finePerDay = BigDecimal.valueOf(50);
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -115,6 +126,22 @@ public class Book {
 
     public void setAvailableCopies(int availableCopies) {
         this.availableCopies = availableCopies;
+    }
+
+    public int getFinePerDayPkr() {
+        return finePerDayPkr;
+    }
+
+    public void setFinePerDayPkr(int finePerDayPkr) {
+        this.finePerDayPkr = finePerDayPkr;
+    }
+
+    public BigDecimal getFinePerDay() {
+        return finePerDay;
+    }
+
+    public void setFinePerDay(BigDecimal finePerDay) {
+        this.finePerDay = finePerDay;
     }
 
     public Instant getCreatedAt() {

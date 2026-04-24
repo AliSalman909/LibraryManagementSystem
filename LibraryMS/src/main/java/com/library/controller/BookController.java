@@ -91,6 +91,7 @@ public class BookController {
         response.setCategory(book.getCategory());
         response.setTotalCopies(book.getTotalCopies());
         response.setAvailableCopies(book.getAvailableCopies());
+        response.setFinePerDayPkr(book.getFinePerDayPkr());
         return response;
     }
 }

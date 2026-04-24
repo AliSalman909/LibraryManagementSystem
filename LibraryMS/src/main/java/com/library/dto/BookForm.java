@@ -2,6 +2,7 @@ package com.library.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class BookForm {
@@ -20,6 +21,10 @@ public class BookForm {
 
     @Min(value = 1, message = "Total copies must be at least 1.")
     private int totalCopies;
+
+    @NotNull(message = "Fine per day is required.")
+    @Min(value = 1, message = "Fine per day must be at least 1 PKR.")
+    private Integer finePerDayPkr;
 
     public String getTitle() {
         return title;
@@ -51,5 +56,13 @@ public class BookForm {
 
     public void setTotalCopies(int totalCopies) {
         this.totalCopies = totalCopies;
+    }
+
+    public Integer getFinePerDayPkr() {
+        return finePerDayPkr;
+    }
+
+    public void setFinePerDayPkr(Integer finePerDayPkr) {
+        this.finePerDayPkr = finePerDayPkr;
     }
 }

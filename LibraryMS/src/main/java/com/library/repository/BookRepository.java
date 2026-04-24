@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface BookRepository extends JpaRepository<Book, String> {
 
@@ -69,4 +70,13 @@ public interface BookRepository extends JpaRepository<Book, String> {
     int incrementAvailableCopies(
             @Param("bookId") String bookId,
             @Param("updatedAt") Instant updatedAt);
+
+    @Modifying
+    @Transactional
+    @Query("""
+            update Book b
+            set b.finePerDayPkr = :defaultFine
+            where b.finePerDayPkr <= 0
+            """)
+    int backfillMissingFinePerDay(@Param("defaultFine") int defaultFine);
 }

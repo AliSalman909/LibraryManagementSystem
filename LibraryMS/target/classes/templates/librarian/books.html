@@ -42,6 +42,12 @@
                     <input id="totalCopies" class="input" type="number" th:field="*{totalCopies}" min="1" required/>
                     <p class="field-error" th:if="${#fields.hasErrors('totalCopies')}" th:errors="*{totalCopies}">Invalid quantity</p>
                 </div>
+                <div class="field">
+                    <label for="finePerDayPkr">Fine per day (PKR)</label>
+                    <input id="finePerDayPkr" class="input" type="number" th:field="*{finePerDayPkr}" min="1" required/>
+                    <p class="field-hint">Required. Used to calculate overdue fine for this book.</p>
+                    <p class="field-error" th:if="${#fields.hasErrors('finePerDayPkr')}" th:errors="*{finePerDayPkr}">Invalid fine</p>
+                </div>
             </div>
             <div class="dashboard-actions">
                 <button type="submit" class="btn btn-primary librarian-primary-action">Add book</button>
@@ -64,13 +70,14 @@
                         <span sec:authorize="!hasRole('LIBRARIAN')">ISBN</span>
                     </th>
                     <th>Category</th>
+                    <th>Fine/day</th>
                     <th>Available</th>
                     <th class="actions-cell">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(books)}">
-                    <td colspan="7" class="empty-state">No books added yet.</td>
+                    <td colspan="8" class="empty-state">No books added yet.</td>
                 </tr>
                 <tr th:each="book : ${books}">
                     <td th:text="${book.bookId}">ID</td>
@@ -81,6 +88,7 @@
                         <span sec:authorize="!hasRole('LIBRARIAN')">—</span>
                     </td>
                     <td th:text="${book.category != null ? book.category : '—'}">—</td>
+                    <td th:text="${book.finePerDayPkr + ' PKR'}">50 PKR</td>
                     <td>
                         <span th:text="${book.availableCopies}">0</span>/<span th:text="${book.totalCopies}">0</span>
                     </td>

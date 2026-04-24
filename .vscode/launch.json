@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "LibraryMS: Spring Boot Run",
+      "request": "launch",
+      "mainClass": "com.library.LibraryApplication",
+      "projectName": "library-management",
+      "cwd": "${workspaceFolder}/LibraryMS"
+    }
+  ]
+}

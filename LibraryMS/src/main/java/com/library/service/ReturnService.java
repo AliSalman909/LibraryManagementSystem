@@ -17,7 +17,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,9 +36,6 @@ public class ReturnService {
     private final FineRepository fineRepository;
     private final LibrarianRepository librarianRepository;
     private final ReservationService reservationService;
-
-    @Value("${app.fine.per-day-rate:10.0}")
-    private double perDayRate;
 
     public ReturnService(
             BorrowRecordRepository borrowRecordRepository,
@@ -105,7 +101,7 @@ public class ReturnService {
         Librarian librarian = librarianRepository.findByUserIdWithUser(librarianUserId)
                 .orElseThrow(() -> new BusinessRuleException("Librarian account not found."));
 
-        BigDecimal amount = BigDecimal.valueOf(daysLate * perDayRate)
+        BigDecimal amount = BigDecimal.valueOf(daysLate * (long) record.getBook().getFinePerDayPkr())
                 .setScale(2, RoundingMode.HALF_UP);
 
         Fine fine = new Fine();

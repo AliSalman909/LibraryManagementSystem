@@ -9,6 +9,7 @@ public class BookResponse {
     private String category;
     private int totalCopies;
     private int availableCopies;
+    private int finePerDayPkr;
 
     public String getId() {
         return id;
@@ -64,5 +65,13 @@ public class BookResponse {
 
     public void setAvailableCopies(int availableCopies) {
         this.availableCopies = availableCopies;
+    }
+
+    public int getFinePerDayPkr() {
+        return finePerDayPkr;
+    }
+
+    public void setFinePerDayPkr(int finePerDayPkr) {
+        this.finePerDayPkr = finePerDayPkr;
     }
 }
