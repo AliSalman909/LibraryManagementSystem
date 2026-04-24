@@ -1,5 +1,14 @@
 package com.library.service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.library.entity.Book;
 import com.library.entity.Reservation;
 import com.library.entity.Student;
@@ -9,13 +18,6 @@ import com.library.repository.BookRepository;
 import com.library.repository.BorrowRecordRepository;
 import com.library.repository.ReservationRepository;
 import com.library.repository.StudentRepository;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Manages the book reservation / waitlist system.
@@ -97,6 +99,7 @@ public class ReservationService {
      */
     @Transactional
     public void cancelByStudent(String reservationId, String studentUserId) {
+        @SuppressWarnings("null")
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found."));
         if (!reservation.getStudent().getUserId().equals(studentUserId)) {
@@ -133,12 +136,44 @@ public class ReservationService {
         reservationRepository.save(next);
     }
 
+    /**
+     * If undo return is blocked because unrelated READY holds exist.
+     * READY rows created by {@link #notifyNextInQueue} for this return fall inside a time window around
+     * {@code returnedAt}; those can be reverted on undo.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasUndoBlockingReadyReservation(String bookId, Instant returnedAt) {
+        Instant from = returnedAt.minusSeconds(120);
+        Instant to = returnedAt.plus(15, ChronoUnit.MINUTES);
+        return reservationRepository.existsReadyOutsideNotifiedWindow(bookId, from, to);
+    }
+
+    /**
+     * Demotes the READY reservation that was most likely promoted when this copy was returned,
+     * so undo return can safely restore the previous loan state.
+     */
+    @Transactional
+    public void revertReadyPromotionFromReturn(String bookId, Instant returnedAt) {
+        Instant from = returnedAt.minusSeconds(120);
+        Instant to = returnedAt.plus(15, ChronoUnit.MINUTES);
+        List<Reservation> candidates = reservationRepository.findReadyNotifiedInWindowForUpdate(bookId, from, to);
+        if (candidates.isEmpty()) {
+            return;
+        }
+        Reservation r = candidates.get(0);
+        r.setStatus(ReservationStatus.PENDING);
+        r.setNotifiedAt(null);
+        r.setExpiresAt(null);
+        reservationRepository.save(r);
+    }
+
     // -----------------------------------------------------------------------
     // Librarian actions
     // -----------------------------------------------------------------------
 
     @Transactional
     public void markFulfilled(String reservationId) {
+        @SuppressWarnings("null")
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found."));
         if (reservation.getStatus() != ReservationStatus.READY) {
@@ -151,6 +186,7 @@ public class ReservationService {
 
     @Transactional
     public void cancelByLibrarian(String reservationId) {
+        @SuppressWarnings("null")
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found."));
         if (reservation.getStatus() == ReservationStatus.FULFILLED ||
@@ -166,6 +202,7 @@ public class ReservationService {
      * Expire all READY reservations whose pickup window has passed.
      * Can be called from a scheduled job or manually.
      */
+    @SuppressWarnings("null")
     @Transactional
     public int expireOverdueReservations() {
         List<Reservation> expired = reservationRepository.findExpiredReady(Instant.now());

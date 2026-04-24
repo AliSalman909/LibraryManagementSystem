@@ -1,6 +1,7 @@
 package com.library.repository;
 
 import com.library.entity.BorrowRecord;
+import com.library.entity.enums.FineStatus;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +34,35 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Stri
             order by r.dueDate asc
             """)
     List<BorrowRecord> findAllActiveWithDetails();
+
+    @Query("""
+            select r from BorrowRecord r
+            join fetch r.book
+            join fetch r.copy
+            join fetch r.student s
+            join fetch s.user
+            where r.returnedAt is not null
+            order by r.returnedAt desc
+            """)
+    List<BorrowRecord> findAllRecentlyReturnedWithDetails();
+
+    /**
+     * Returned loans that still have an UNPAID fine (same rows as receipt line items),
+     * with book, copy, student for the librarian undo table.
+     */
+    @Query("""
+            select r from BorrowRecord r
+            join fetch r.book
+            join fetch r.copy
+            join fetch r.student s
+            join fetch s.user
+            where r.returnedAt is not null
+              and exists (select 1 from Fine f
+                          where f.borrowRecord.recordId = r.recordId
+                            and f.status = :unpaid)
+            order by r.returnedAt desc
+            """)
+    List<BorrowRecord> findReturnedWithUnpaidFineWithDetails(@Param("unpaid") FineStatus unpaid);
 
     /**
      * Fetch all loans for a student (returned + active) with book eagerly loaded,
@@ -91,6 +121,14 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Stri
             order by r.dueDate asc
             """)
     List<BorrowRecord> findAllOverdueWithDetails(@Param("today") java.time.LocalDate today);
+
+    /** At most one active loan per physical copy; used for undo-return messaging. */
+    @Query("""
+            select r from BorrowRecord r
+            join fetch r.student s
+            where r.copy.copyId = :copyId and r.returnedAt is null
+            """)
+    Optional<BorrowRecord> findActiveByCopyCopyId(@Param("copyId") String copyId);
 
     /**
      * Count all active (unreturned) loans.

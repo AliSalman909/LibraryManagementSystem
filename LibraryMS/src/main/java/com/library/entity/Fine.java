@@ -1,6 +1,10 @@
 package com.library.entity;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+
 import com.library.entity.enums.FineStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,8 +16,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-import java.math.BigDecimal;
-import java.time.Instant;
 
 /**
  * Represents an overdue fine linked to a specific BorrowRecord.

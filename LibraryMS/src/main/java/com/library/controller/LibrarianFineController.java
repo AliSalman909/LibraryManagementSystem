@@ -1,11 +1,19 @@
 package com.library.controller;
 
+import com.library.dto.StudentUnpaidReceiptRow;
+import com.library.entity.Fine;
 import com.library.entity.enums.FineStatus;
 import com.library.exception.BusinessRuleException;
 import com.library.messages.UserFacingMessages;
 import com.library.security.LibraryUserDetails;
 import com.library.service.FineService;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -34,8 +42,39 @@ public class LibrarianFineController {
             @RequestParam(name = "filter", defaultValue = "unpaid") String filter,
             Model model) {
         model.addAttribute("fines", fineService.listFinesByFilter(filter));
-        model.addAttribute("unpaidFinesForReceipt", fineService.listFinesByFilter("unpaid"));
+        List<Fine> unpaid = fineService.listFinesByFilter("unpaid");
+        Map<String, List<Fine>> byStudent =
+                unpaid.stream().collect(Collectors.groupingBy(f -> f.getStudent().getUserId()));
+        List<StudentUnpaidReceiptRow> studentReceiptRows = new ArrayList<>();
+        for (Map.Entry<String, List<Fine>> e : byStudent.entrySet()) {
+            List<Fine> lines = new ArrayList<>(e.getValue());
+            lines.sort(Comparator.comparing(Fine::getIssuedAt));
+            Fine first = lines.get(0);
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            BigDecimal totalWaived = BigDecimal.ZERO;
+            for (Fine f : lines) {
+                totalAmount = totalAmount.add(f.getAmount());
+                totalWaived = totalWaived.add(f.getWaivedAmount() != null ? f.getWaivedAmount() : BigDecimal.ZERO);
+            }
+            BigDecimal totalNet =
+                    lines.stream().map(Fine::getNetAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            long rid = StudentUnpaidReceiptRow.combinedReceiptId(first.getStudent().getUserId());
+            studentReceiptRows.add(
+                    new StudentUnpaidReceiptRow(
+                            first.getStudent().getUserId(),
+                            first.getStudent().getUser().getFullName(),
+                            first.getStudent().getUser().getEmail(),
+                            lines.size(),
+                            totalAmount,
+                            totalWaived,
+                            totalNet,
+                            rid,
+                            lines));
+        }
+        studentReceiptRows.sort(Comparator.comparing(StudentUnpaidReceiptRow::fullName, String.CASE_INSENSITIVE_ORDER));
+        model.addAttribute("studentUnpaidReceiptRows", studentReceiptRows);
         model.addAttribute("liveOverdueLoans", fineService.listLiveOverdueLoans());
+        model.addAttribute("today", LocalDate.now());
         model.addAttribute("filter", normalizeFilter(filter));
         model.addAttribute("FineStatus", FineStatus.class); // expose enum to template
         return "librarian/fines";
@@ -73,12 +112,44 @@ public class LibrarianFineController {
         return "redirect:/librarian/fines?filter=unpaid";
     }
 
+    /** Legacy per-fine URL → combined student receipt. */
     @GetMapping("/librarian/fines/{fineId}/receipt")
-    public String viewReceipt(@PathVariable String fineId, Model model) {
+    public String viewReceipt(@PathVariable String fineId) {
         var fine = fineService.getFineByIdWithDetails(fineId);
-        model.addAttribute("fine", fine);
-        model.addAttribute("receiptFileName", fine.getStudent().getUserId() + "-receipt");
-        return "librarian/fine-receipt";
+        return "redirect:/librarian/fines/receipt/student/" + fine.getStudent().getUserId();
+    }
+
+    @GetMapping("/librarian/fines/receipt/student/{studentUserId}")
+    public String viewStudentReceipt(
+            @PathVariable String studentUserId, Model model, RedirectAttributes redirectAttributes) {
+        List<Fine> lines = fineService.listUnpaidWithDetailsForStudent(studentUserId);
+        if (lines.isEmpty()) {
+            redirectAttributes.addFlashAttribute("flashError", "No unpaid fines for this student.");
+            return "redirect:/librarian/fines?filter=unpaid";
+        }
+        Fine first = lines.get(0);
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalWaived = BigDecimal.ZERO;
+        for (Fine f : lines) {
+            totalAmount = totalAmount.add(f.getAmount());
+            totalWaived = totalWaived.add(f.getWaivedAmount() != null ? f.getWaivedAmount() : BigDecimal.ZERO);
+        }
+        BigDecimal totalNet = lines.stream().map(Fine::getNetAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        long rid = StudentUnpaidReceiptRow.combinedReceiptId(studentUserId);
+        model.addAttribute(
+                "receiptRow",
+                new StudentUnpaidReceiptRow(
+                        first.getStudent().getUserId(),
+                        first.getStudent().getUser().getFullName(),
+                        first.getStudent().getUser().getEmail(),
+                        lines.size(),
+                        totalAmount,
+                        totalWaived,
+                        totalNet,
+                        rid,
+                        lines));
+        model.addAttribute("receiptFileName", studentUserId + "-receipt");
+        return "librarian/fine-receipt-student";
     }
 
     private String normalizeFilter(String filter) {

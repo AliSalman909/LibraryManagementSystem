@@ -60,7 +60,7 @@
                         <form class="inline-action"
                               th:action="@{/librarian/active-loans/{id}/return(id=${loan.recordId})}"
                               method="post"
-                              onsubmit="return confirm('Return this book? This action cannot be undone.');">
+                              onsubmit="return confirm('Return this book?');">
                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <button type="submit" class="btn btn-primary btn-sm">Return</button>
                         </form>
@@ -72,6 +72,81 @@
 
         <div class="dashboard-actions" style="margin-top:1.5rem;">
             <a th:href="@{/librarian/fines}" class="btn btn-outline">View Fines →</a>
+        </div>
+    </section>
+
+    <section class="dashboard-hero card-elevated">
+        <h2>Recently Returned (Undo Window)</h2>
+        <p class="lede">Lists every return that still has an <strong>unpaid</strong> fine (same book / instance as the receipt) plus other recent returns. <strong>Book ID</strong> and <strong>copy instance</strong> match the receipt. Undo stays <strong>locked</strong> if this copy was checked out again (same or different member) until that newer loan is returned; with an unpaid fine and the copy on the shelf, undo is <strong>unlocked</strong>. Paid/waived fines or blocking reservations still lock undo.</p>
+        <div class="table-wrap">
+            <table class="data-table librarian-borrow-requests-table">
+                <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Book ID</th>
+                    <th>Copy / instance</th>
+                    <th>Returned At</th>
+                    <th>Fine Issued</th>
+                    <th>Fine Amount</th>
+                    <th>Fine Status</th>
+                    <th class="actions-cell">Undo</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(recentlyReturnedLoans)}">
+                    <td colspan="9" class="empty-state">No recently returned loans.</td>
+                </tr>
+                <tr th:each="loan : ${recentlyReturnedLoans}">
+                    <td>
+                        <div th:text="${loan.student.user.fullName}">Student</div>
+                        <div class="muted-note cell-mono">ID: <span th:text="${loan.student.userId}">ID</span></div>
+                    </td>
+                    <td>
+                        <div th:text="${loan.book.title}">Book</div>
+                        <div th:if="${fineStatusByRecord[loan.recordId] == 'UNPAID'}" class="muted-note" style="margin-top:0.25rem;">
+                            <span class="status-pill status-pill--overdue" style="font-size:0.75rem;">On unpaid receipt</span>
+                        </div>
+                    </td>
+                    <td class="cell-mono" th:text="${loan.book.bookId}">BK001</td>
+                    <td>
+                        <div class="cell-mono" th:text="${loan.copy != null ? loan.copy.copyId : '—'}">copy-id</div>
+                        <div class="muted-note cell-mono" th:text="${loan.copy != null ? loan.copy.isbnCode : '—'}">ISBN</div>
+                    </td>
+                    <td th:text="${#temporals.format(loan.returnedAt, 'yyyy-MM-dd HH:mm', #locale)}">2026-01-01</td>
+                    <td>
+                        <span th:if="${fineStatusByRecord[loan.recordId] != 'NO_FINE'}"
+                              class="status-pill status-pill--active">Yes</span>
+                        <span th:if="${fineStatusByRecord[loan.recordId] == 'NO_FINE'}"
+                              class="status-pill">No</span>
+                    </td>
+                    <td th:text="${#numbers.formatDecimal(fineAmountByRecord[loan.recordId], 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
+                    <td>
+                        <span th:with="fineStatus=${fineStatusByRecord[loan.recordId]}"
+                              th:switch="${fineStatus}">
+                            <span th:case="'PAID'" class="status-pill status-pill--active">Paid</span>
+                            <span th:case="'WAIVED'" class="status-pill status-pill--waived">Waived</span>
+                            <span th:case="'UNPAID'" class="status-pill status-pill--overdue">Unpaid</span>
+                            <span th:case="*"
+                                  class="status-pill">No Fine</span>
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <form class="inline-action"
+                              th:action="@{/librarian/active-loans/{id}/undo-return(id=${loan.recordId})}"
+                              method="post"
+                              onsubmit="return confirm('Undo this return and move loan back to active?');">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit"
+                                    class="btn btn-outline btn-sm"
+                                    th:disabled="${!undoAllowedByRecord[loan.recordId]}">Undo Return</button>
+                        </form>
+                        <div class="muted-note" style="margin-top:0.4rem;"
+                             th:text="${undoMessageByRecord[loan.recordId]}">Undo message</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </main>

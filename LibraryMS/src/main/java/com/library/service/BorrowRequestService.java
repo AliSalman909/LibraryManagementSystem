@@ -202,6 +202,7 @@ public class BorrowRequestService {
     /**
      * Student cancels their own PENDING borrow request.
      */
+    @SuppressWarnings("null")
     @Transactional
     public void cancelByStudent(String requestId, String studentUserId) {
         BorrowRequest request = borrowRequestRepository.findById(requestId)

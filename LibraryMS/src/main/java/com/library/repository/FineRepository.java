@@ -5,8 +5,10 @@ import com.library.entity.enums.FineStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 public interface FineRepository extends JpaRepository<Fine, String> {
 
@@ -69,6 +71,26 @@ public interface FineRepository extends JpaRepository<Fine, String> {
             where f.fineId = :fineId
             """)
     Optional<Fine> findByIdWithDetails(@Param("fineId") String fineId);
+
+    Optional<Fine> findByBorrowRecordRecordId(String recordId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select f from Fine f where f.borrowRecord.recordId = :recordId")
+    Optional<Fine> findByBorrowRecordRecordIdForUpdate(@Param("recordId") String recordId);
+
+    /** All UNPAID fines for one student with full graph (combined receipt). */
+    @Query("""
+            select f from Fine f
+            join fetch f.borrowRecord r
+            join fetch r.book
+            join fetch f.student s
+            join fetch s.user
+            left join fetch f.resolvedBy lb
+            left join fetch lb.user
+            where f.student.userId = :studentUserId and f.status = 'UNPAID'
+            order by f.issuedAt asc
+            """)
+    List<Fine> findAllUnpaidWithDetailsByStudentUserId(@Param("studentUserId") String studentUserId);
 
     /** Check if a student has any fine in a given status (used as renewal blocker). */
     boolean existsByStudentUserIdAndStatus(String studentUserId, FineStatus status);

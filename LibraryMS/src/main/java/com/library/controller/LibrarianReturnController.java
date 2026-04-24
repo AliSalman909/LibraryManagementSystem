@@ -25,7 +25,33 @@ public class LibrarianReturnController {
     /** Lists all active (unreturned) loans. */
     @GetMapping("/librarian/active-loans")
     public String activeLoans(Model model) {
+        var recentlyReturned = returnService.listReturnsForUndoSection();
+        var undoAllowed = new java.util.HashMap<String, Boolean>();
+        var fineStatusByRecord = new java.util.HashMap<String, String>();
+        var fineAmountByRecord = new java.util.HashMap<String, java.math.BigDecimal>();
+        var undoMessageByRecord = new java.util.HashMap<String, String>();
+        for (var loan : recentlyReturned) {
+            String lockReason = returnService.explainUndoLockReason(loan);
+            boolean undoAllowedNow = lockReason == null;
+            undoAllowed.put(loan.getRecordId(), undoAllowedNow);
+            fineStatusByRecord.put(loan.getRecordId(), returnService.fineStatusLabel(loan));
+            fineAmountByRecord.put(loan.getRecordId(), returnService.fineAmountForLoan(loan));
+            if (undoAllowedNow) {
+                boolean overdueIfUndone = loan.getDueDate().isBefore(java.time.LocalDate.now());
+                String hint = overdueIfUndone
+                        ? "If undone: moves to Live Overdue Books."
+                        : "If undone: moves to Active Loans.";
+                undoMessageByRecord.put(loan.getRecordId(), hint);
+            } else {
+                undoMessageByRecord.put(loan.getRecordId(), lockReason);
+            }
+        }
         model.addAttribute("activeLoans", returnService.listActiveLoans());
+        model.addAttribute("recentlyReturnedLoans", recentlyReturned);
+        model.addAttribute("undoAllowedByRecord", undoAllowed);
+        model.addAttribute("fineStatusByRecord", fineStatusByRecord);
+        model.addAttribute("fineAmountByRecord", fineAmountByRecord);
+        model.addAttribute("undoMessageByRecord", undoMessageByRecord);
         return "librarian/active-loans";
     }
 
@@ -45,6 +71,21 @@ public class LibrarianReturnController {
                         String.format("Book returned. Overdue by %d day(s). Fine of PKR %.2f issued.",
                                 fine.getDaysLate(), fine.getAmount()));
             }
+        } catch (BusinessRuleException ex) {
+            redirectAttributes.addFlashAttribute("flashError",
+                    UserFacingMessages.orGeneric(ex.getMessage()));
+        }
+        return "redirect:/librarian/active-loans";
+    }
+
+    @PostMapping("/librarian/active-loans/{recordId}/undo-return")
+    public String undoReturn(
+            @PathVariable String recordId,
+            @AuthenticationPrincipal LibraryUserDetails principal,
+            RedirectAttributes redirectAttributes) {
+        try {
+            returnService.undoReturn(recordId, principal.getUserId());
+            redirectAttributes.addFlashAttribute("flashSuccess", "Return has been undone successfully.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError",
                     UserFacingMessages.orGeneric(ex.getMessage()));

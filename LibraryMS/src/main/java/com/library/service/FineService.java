@@ -63,6 +63,11 @@ public class FineService {
     }
 
     @Transactional(readOnly = true)
+    public List<Fine> listUnpaidWithDetailsForStudent(String studentUserId) {
+        return fineRepository.findAllUnpaidWithDetailsByStudentUserId(Objects.requireNonNull(studentUserId));
+    }
+
+    @Transactional(readOnly = true)
     public List<com.library.entity.BorrowRecord> listLiveOverdueLoans() {
         return borrowRecordRepository.findAllOverdueWithDetails(LocalDate.now());
     }

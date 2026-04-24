@@ -31,6 +31,7 @@ C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\dto\BorrowRequestCreateRequest.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\dto\BorrowRequestResponse.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\dto\RegistrationForm.java
+C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\dto\StudentUnpaidReceiptRow.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\entity\AdminProfile.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\entity\Book.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\entity\BookCopy.java

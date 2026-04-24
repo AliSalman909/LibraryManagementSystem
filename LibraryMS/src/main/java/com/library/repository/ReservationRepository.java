@@ -2,10 +2,11 @@ package com.library.repository;
 
 import com.library.entity.Reservation;
 import com.library.entity.enums.ReservationStatus;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -103,4 +104,36 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
             where r.status = 'READY' and r.expiresAt < :now
             """)
     List<Reservation> findExpiredReady(@Param("now") Instant now);
+
+    /**
+     * READY reservations for a book whose notification time is outside the undo window
+     * for a given return (blocks undo — not caused by this return).
+     */
+    @Query("""
+            select count(r) > 0 from Reservation r
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+              and (r.notifiedAt is null or r.notifiedAt < :fromInclusive or r.notifiedAt > :toInclusive)
+            """)
+    boolean existsReadyOutsideNotifiedWindow(
+            @Param("bookId") String bookId,
+            @Param("fromInclusive") Instant fromInclusive,
+            @Param("toInclusive") Instant toInclusive);
+
+    /**
+     * READY reservations likely promoted by this return (same notify batch), ordered oldest first.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+              and r.notifiedAt >= :fromInclusive
+              and r.notifiedAt <= :toInclusive
+            order by r.notifiedAt asc
+            """)
+    List<Reservation> findReadyNotifiedInWindowForUpdate(
+            @Param("bookId") String bookId,
+            @Param("fromInclusive") Instant fromInclusive,
+            @Param("toInclusive") Instant toInclusive);
 }
