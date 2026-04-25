@@ -15,15 +15,12 @@ import com.library.entity.Notification;
 import com.library.entity.RegistrationRequest;
 import com.library.entity.User;
 import com.library.entity.enums.AccountStatus;
-import com.library.entity.enums.FineStatus;
 import com.library.entity.enums.NotificationType;
 import com.library.entity.enums.RequestStatus;
 import com.library.entity.enums.UserRole;
 import com.library.exception.BusinessRuleException;
 import com.library.repository.AdminProfileRepository;
-import com.library.repository.BorrowRecordRepository;
 import com.library.repository.DeletionRequestRepository;
-import com.library.repository.FineRepository;
 import com.library.repository.LibrarianRepository;
 import com.library.repository.NotificationRepository;
 import com.library.repository.RegistrationRequestRepository;
@@ -44,8 +41,6 @@ public class AdminUserAccountService {
     private final StudentRepository studentRepository;
     private final LibrarianRepository librarianRepository;
     private final AdminProfileRepository adminProfileRepository;
-    private final BorrowRecordRepository borrowRecordRepository;
-    private final FineRepository fineRepository;
 
     public AdminUserAccountService(
             UserRepository userRepository,
@@ -56,9 +51,7 @@ public class AdminUserAccountService {
             DeletionRequestRepository deletionRequestRepository,
             StudentRepository studentRepository,
             LibrarianRepository librarianRepository,
-            AdminProfileRepository adminProfileRepository,
-            BorrowRecordRepository borrowRecordRepository,
-            FineRepository fineRepository) {
+            AdminProfileRepository adminProfileRepository) {
         this.userRepository = userRepository;
         this.passwordEncryptionService = passwordEncryptionService;
         this.userIdEncryptionService = userIdEncryptionService;
@@ -68,8 +61,6 @@ public class AdminUserAccountService {
         this.studentRepository = studentRepository;
         this.librarianRepository = librarianRepository;
         this.adminProfileRepository = adminProfileRepository;
-        this.borrowRecordRepository = borrowRecordRepository;
-        this.fineRepository = fineRepository;
     }
 
     @Transactional(readOnly = true)
@@ -177,7 +168,6 @@ public class AdminUserAccountService {
 
     /**
      * Permanently removes the user row and dependent records. Not allowed for {@link UserRole#ADMIN}.
-     * Blocked while circulation rows still reference this person (database foreign keys would fail otherwise).
      */
     @SuppressWarnings("null")
     @Transactional
@@ -185,7 +175,6 @@ public class AdminUserAccountService {
         User user = loadManagedUser(storedUserId);
         assertNotAdmin(user);
         String uid = user.getUserId();
-        assertSafeToHardDelete(user, uid);
         notificationRepository.deleteAllForUser(uid);
         registrationRequestRepository.deleteAllForUser(uid);
         deletionRequestRepository.deleteAllForUser(uid);
@@ -208,29 +197,6 @@ public class AdminUserAccountService {
         if (user.getUserRole() == UserRole.ADMIN) {
             throw new BusinessRuleException(
                     "Administrator accounts are protected and cannot be changed or removed from this screen.");
-        }
-    }
-
-    private void assertSafeToHardDelete(User user, String uid) {
-        if (user.getUserRole() == UserRole.STUDENT) {
-            if (fineRepository.existsByStudentUserIdAndStatus(uid, FineStatus.UNPAID)) {
-                throw new BusinessRuleException(
-                        "This account cannot be deleted while the student still has unpaid fines. "
-                                + "Resolve fines first, then remove any remaining borrow history if required.");
-            }
-            if (borrowRecordRepository.existsByStudent_UserId(uid)) {
-                throw new BusinessRuleException(
-                        "This account cannot be deleted while borrow records still exist for this student "
-                                + "(active or returned loans, undo history, and catalog links). "
-                                + "Remove or archive that circulation data first if policy allows.");
-            }
-        }
-        if (user.getUserRole() == UserRole.LIBRARIAN) {
-            if (borrowRecordRepository.existsByIssuedBy_UserId(uid)) {
-                throw new BusinessRuleException(
-                        "This librarian cannot be deleted while they are still recorded as having issued one or more "
-                                + "loans. Reassign or archive those borrow records first.");
-            }
         }
     }
 
