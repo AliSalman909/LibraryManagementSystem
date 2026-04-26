@@ -4,12 +4,25 @@
     const FIELD_SELECTOR = "input, textarea, select";
     const PASSWORD_SELECTOR = "input[type='password']";
 
+    function armReadonlyGuard(field) {
+        if (!field || field.dataset.noAutofillArmed === "true") return;
+        field.setAttribute("readonly", "readonly");
+        const unlock = () => field.removeAttribute("readonly");
+        field.addEventListener("focus", unlock, { once: true });
+        field.addEventListener("pointerdown", unlock, { once: true });
+        field.addEventListener("keydown", unlock, { once: true });
+        field.dataset.noAutofillArmed = "true";
+    }
+
     function hardenField(field) {
         if (!field || field.disabled) return;
         field.setAttribute("autocomplete", "off");
         field.setAttribute("autocorrect", "off");
         field.setAttribute("autocapitalize", "off");
         field.setAttribute("spellcheck", "false");
+        if (field.matches("input")) {
+            armReadonlyGuard(field);
+        }
     }
 
     function hardenForm(form) {

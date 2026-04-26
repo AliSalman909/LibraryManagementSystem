@@ -781,7 +781,9 @@ select:-webkit-autofill:focus {
 }
 
 .student-dashboard-actions-grid .btn {
-    width: 100%;
+    width: 90%;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
 /* Keep first four buttons in a 2x2 grid; center the last action below them. */
@@ -811,8 +813,8 @@ select:-webkit-autofill:focus {
 }
 
 .admin-dashboard-actions-grid .btn {
-    width: 100%;
-    font-size: 1.2rem;
+    width: 90%;
+    font-size: 1.1rem;
     font-weight: 600;
     min-height: 46px;
 }
