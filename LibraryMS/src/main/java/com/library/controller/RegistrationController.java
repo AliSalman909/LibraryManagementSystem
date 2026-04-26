@@ -36,6 +36,8 @@ public class RegistrationController {
 
     /** Session-scoped 6-character plain id shown before submit; removed after successful registration. */
     private static final String SESSION_PENDING_USER_ID = "PENDING_REGISTRATION_PLAIN_USER_ID";
+    private static final String SESSION_LAST_REGISTERED_USER_ID = "LAST_REGISTERED_PLAIN_USER_ID";
+    private static final String SESSION_LAST_REGISTRATION_SUCCESS_MESSAGE = "LAST_REGISTRATION_SUCCESS_MESSAGE";
 
     private final RegistrationService registrationService;
     private final DataSize maxProfilePictureSize;
@@ -81,11 +83,41 @@ public class RegistrationController {
      * plain user ID on the registration flow.
      */
     @GetMapping("/register/complete")
-    public String registrationComplete(@ModelAttribute("registeredPlainUserId") String registeredPlainUserId) {
-        if (registeredPlainUserId == null || registeredPlainUserId.isBlank()) {
+    public String registrationComplete(
+            HttpServletRequest request,
+            @ModelAttribute("registeredPlainUserId") String registeredPlainUserId,
+            @ModelAttribute("registrationSuccessMessage") String registrationSuccessMessage,
+            Model model) {
+        HttpSession session = request.getSession(true);
+        if (registeredPlainUserId != null && !registeredPlainUserId.isBlank()) {
+            session.setAttribute(SESSION_LAST_REGISTERED_USER_ID, registeredPlainUserId);
+        }
+        if (registrationSuccessMessage != null && !registrationSuccessMessage.isBlank()) {
+            session.setAttribute(SESSION_LAST_REGISTRATION_SUCCESS_MESSAGE, registrationSuccessMessage);
+        }
+
+        String stableUserId = (String) session.getAttribute(SESSION_LAST_REGISTERED_USER_ID);
+        String stableSuccessMessage = (String) session.getAttribute(SESSION_LAST_REGISTRATION_SUCCESS_MESSAGE);
+        if (stableUserId == null || stableUserId.isBlank()) {
             return "redirect:/register";
         }
+        model.addAttribute("registeredPlainUserId", stableUserId);
+        if (stableSuccessMessage != null && !stableSuccessMessage.isBlank()) {
+            model.addAttribute("registrationSuccessMessage", stableSuccessMessage);
+        }
         return "auth/registration-complete";
+    }
+
+    @GetMapping("/register/complete/to-login")
+    public String completeToLogin(HttpServletRequest request) {
+        clearCompletionSessionState(request.getSession(true));
+        return "redirect:/login";
+    }
+
+    @GetMapping("/register/complete/new")
+    public String completeToNewRegistration(HttpServletRequest request) {
+        clearCompletionSessionState(request.getSession(true));
+        return "redirect:/register";
     }
 
     @SuppressWarnings("null")
@@ -208,5 +240,10 @@ public class RegistrationController {
             return UserFacingMessages.REGISTRATION_SAVE_FAILED_SCHEMA;
         }
         return UserFacingMessages.REGISTRATION_SAVE_FAILED_GENERIC;
+    }
+
+    private static void clearCompletionSessionState(HttpSession session) {
+        session.removeAttribute(SESSION_LAST_REGISTERED_USER_ID);
+        session.removeAttribute(SESSION_LAST_REGISTRATION_SUCCESS_MESSAGE);
     }
 }

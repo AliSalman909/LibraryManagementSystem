@@ -11,12 +11,6 @@
         btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
     }
 
-    document.querySelectorAll(".toggle-password").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            togglePasswordForButton(btn);
-        });
-    });
-
     // Delegated fallback for pages where JS may initialize before dynamic DOM updates.
     document.addEventListener("click", function (e) {
         var btn = e.target && e.target.closest ? e.target.closest(".toggle-password") : null;

@@ -221,14 +221,13 @@ a:hover {
 }
 
 /* Sign-in only: slightly wider card than default. */
-.page-auth .auth-card {
+.page-login .auth-card {
     width: min(480px, 100%);
 }
 
 /* Registration: make the create-account form wider. */
 .page-register .auth-card {
-    width: 100%;
-    max-width: 840px;
+    width: min(840px, 100%);
     margin-inline: auto;
 }
 

@@ -1,6 +1,7 @@
 (() => {
     const POLL_MS = 5000;
     let inFlight = false;
+    const TABLE_WRAP_SELECTOR = ".table-wrap";
 
     function isEditableElement(el) {
         if (!el) return false;
@@ -60,6 +61,37 @@
         return !path.startsWith("/error");
     }
 
+    function buildScrollKey(el, index) {
+        const explicitKey = el.getAttribute("data-scroll-key");
+        if (explicitKey) return explicitKey;
+        const classes = (el.className || "").trim().replace(/\s+/g, ".");
+        return (classes ? "." + classes : TABLE_WRAP_SELECTOR) + "#" + index;
+    }
+
+    function captureHorizontalScrollPositions(root) {
+        if (!root) return new Map();
+        const positions = new Map();
+        const wraps = root.querySelectorAll(TABLE_WRAP_SELECTOR);
+        wraps.forEach((el, index) => {
+            if (el.scrollWidth > el.clientWidth) {
+                positions.set(buildScrollKey(el, index), el.scrollLeft);
+            }
+        });
+        return positions;
+    }
+
+    function restoreHorizontalScrollPositions(root, positions) {
+        if (!root || !positions || positions.size === 0) return;
+        const wraps = root.querySelectorAll(TABLE_WRAP_SELECTOR);
+        wraps.forEach((el, index) => {
+            const key = buildScrollKey(el, index);
+            const left = positions.get(key);
+            if (typeof left === "number") {
+                el.scrollLeft = left;
+            }
+        });
+    }
+
     async function refreshFragments() {
         if (inFlight || document.hidden || !shouldRunOnThisPage()) return;
         if (hasUnsavedOrActiveInput()) return;
@@ -83,7 +115,10 @@
             const currentMain = document.querySelector("main");
             const nextMain = nextDoc.querySelector("main");
             if (currentMain && nextMain && currentMain.innerHTML !== nextMain.innerHTML) {
+                const tableWrapScrollPositions = captureHorizontalScrollPositions(currentMain);
                 currentMain.replaceWith(nextMain);
+                // Restore horizontal scroll so wide tables stay where the user left them.
+                requestAnimationFrame(() => restoreHorizontalScrollPositions(nextMain, tableWrapScrollPositions));
             }
 
             const currentHeader = document.querySelector(".site-header");

@@ -19,6 +19,9 @@ public final class UserFacingMessages {
     public static final String REGISTRATION_DUPLICATE_EMAIL =
             "That email is already registered. Try signing in, or use a different email address.";
 
+    public static final String REGISTRATION_ADMIN_ALREADY_EXISTS =
+            "An administrator account already exists for this library, so a new admin cannot be created again through registration.";
+
     public static final String REGISTRATION_SAVE_FAILED_SCHEMA =
             "We could not save your registration. Please try again in a moment. If this keeps happening, contact the"
                     + " library for help.";

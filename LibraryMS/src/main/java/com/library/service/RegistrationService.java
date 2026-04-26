@@ -20,6 +20,7 @@ import com.library.entity.enums.AccountStatus;
 import com.library.entity.enums.RequestStatus;
 import com.library.entity.enums.UserRole;
 import com.library.exception.BusinessRuleException;
+import com.library.messages.UserFacingMessages;
 import com.library.repository.AdminProfileRepository;
 import com.library.repository.LibrarianRepository;
 import com.library.repository.RegistrationRequestRepository;
@@ -154,6 +155,10 @@ public class RegistrationService {
 
         try {
             if (role == UserRole.ADMIN) {
+                // Fast-path validation first so users get a clear message when an admin already exists,
+                // even if advisory-lock SQL is unavailable in the current database.
+                validateAdmin();
+
                 // Advisory DB lock so only one request can run the "first admin" check+save at a time.
                 Integer lockAcquired =
                         jdbcTemplate.queryForObject(
@@ -252,10 +257,8 @@ public class RegistrationService {
     }
 
     private void validateAdmin() {
-        if (adminProfileRepository.count() > 0) {
-            throw new BusinessRuleException(
-                    "This library already has an administrator account. New administrators cannot be registered through"
-                            + " this form.");
+        if (adminProfileRepository.count() > 0 || userRepository.existsByUserRole(UserRole.ADMIN)) {
+            throw new BusinessRuleException(UserFacingMessages.REGISTRATION_ADMIN_ALREADY_EXISTS);
         }
     }
 

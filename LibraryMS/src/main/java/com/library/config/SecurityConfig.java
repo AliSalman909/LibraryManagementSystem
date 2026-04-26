@@ -40,6 +40,7 @@ public class SecurityConfig {
                                                 "/login",
                                                 "/register",
                                                 "/register/complete",
+                                                "/register/complete/**",
                                                 "/error",
                                                 "/access-denied")
                                         .permitAll()

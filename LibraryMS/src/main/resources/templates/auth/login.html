@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
 <head th:replace="~{fragments/layout :: head (title='Sign in — Library')}"></head>
-<body class="page-auth">
+<body class="page-auth page-login">
 <header th:replace="~{fragments/layout :: site-header}"></header>
 
 <main class="auth-shell">
@@ -72,20 +72,5 @@
 
 <footer th:replace="~{fragments/layout :: site-footer}"></footer>
 <script th:src="@{/js/auth.js}" defer></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll(".toggle-password").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                var targetId = btn.getAttribute("data-toggle-target");
-                var input = targetId ? document.getElementById(targetId) : null;
-                if (!input) return;
-                var show = input.type === "password";
-                input.type = show ? "text" : "password";
-                btn.textContent = show ? "Hide" : "Show";
-                btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
-            });
-        });
-    });
-</script>
 </body>
 </html>
