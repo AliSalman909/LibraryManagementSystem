@@ -1,5 +1,6 @@
 (() => {
-    const POLL_MS = 5000;
+    const DEFAULT_POLL_MS = 5000;
+    const REPORTS_POLL_MS = 2000;
     let inFlight = false;
     const TABLE_WRAP_SELECTOR = ".table-wrap";
 
@@ -59,6 +60,14 @@
         const path = window.location.pathname || "";
         // Avoid interrupting auth forms unless user left them idle with no edits.
         return !path.startsWith("/error");
+    }
+
+    function pollIntervalForPath() {
+        const path = window.location.pathname || "";
+        if (path.startsWith("/admin/reports/")) {
+            return REPORTS_POLL_MS;
+        }
+        return DEFAULT_POLL_MS;
     }
 
     function buildScrollKey(el, index) {
@@ -144,7 +153,7 @@
     }
 
     function start() {
-        window.setInterval(refreshFragments, POLL_MS);
+        window.setInterval(refreshFragments, pollIntervalForPath());
         document.addEventListener("visibilitychange", () => {
             if (!document.hidden) {
                 refreshFragments();

@@ -13,13 +13,17 @@
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Reports</p>
         <h1>Fine Collection Summary</h1>
-        <p class="lede">Aggregate view of all fines: unpaid, paid, and waived.</p>
 
         <div class="report-cards" th:if="${fineReport != null}">
             <div class="report-card report-card--warn">
-                <div class="report-card-label">Unpaid</div>
-                <div class="report-card-value" th:text="${fineReport.unpaidCount()}">0</div>
-                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.unpaidAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+                <div class="report-card-label">Unpaid (Issued)</div>
+                <div class="report-card-value" th:text="${fineReport.unpaidIssuedCount()}">0</div>
+                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.unpaidIssuedAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+            </div>
+            <div class="report-card report-card--warn">
+                <div class="report-card-label">Unpaid (Not Issued)</div>
+                <div class="report-card-value" th:text="${fineReport.unpaidNotIssuedCount()}">0</div>
+                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.unpaidNotIssuedAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
             </div>
             <div class="report-card report-card--success">
                 <div class="report-card-label">Paid</div>

@@ -13,14 +13,13 @@
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Reports</p>
         <h1>Currently Issued Books</h1>
-        <p class="lede">All books currently checked out to students (active, unreturned loans).</p>
 
         <div th:if="${#lists.isEmpty(activeLoans)}" class="alert alert-success" role="status">
             No books are currently issued.
         </div>
 
         <div th:if="${!#lists.isEmpty(activeLoans)}" class="alert alert-warn" role="status"
-             th:text="${#lists.size(activeLoans) + ' active loan(s).'}">Count</div>
+             th:text="${#lists.size(activeLoans) + ' issued/unreturned book(s) currently off-shelf (on-time + overdue).'}">Count</div>
 
         <div class="table-wrap" th:if="${!#lists.isEmpty(activeLoans)}">
             <table class="data-table">

@@ -13,14 +13,13 @@
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Reports</p>
         <h1>Overdue Loans</h1>
-        <p class="lede">Active loans that are past their due date. These students may accrue fines upon return.</p>
 
         <div th:if="${#lists.isEmpty(overdueLoans)}" class="alert alert-success" role="status">
             No overdue loans — all books are on time!
         </div>
 
         <div th:if="${!#lists.isEmpty(overdueLoans)}" class="alert alert-warn" role="alert"
-             th:text="${#lists.size(overdueLoans) + ' overdue loan(s) found.'}">Count</div>
+             th:text="${#lists.size(overdueLoans) + ' live overdue unreturned loan(s). Returned books are removed automatically.'}">Count</div>
 
         <div class="table-wrap" th:if="${!#lists.isEmpty(overdueLoans)}">
             <table class="data-table">

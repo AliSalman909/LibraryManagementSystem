@@ -69,7 +69,7 @@ a:hover {
     font-weight: 700;
     letter-spacing: 0.02em;
     color: var(--text);
-    font-size: 1.1rem;
+    font-size: 1.32rem;
 }
 
 .brand:hover {
@@ -86,6 +86,7 @@ a:hover {
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
+    min-width: 0;
 }
 
 .nav-user {
@@ -101,16 +102,18 @@ a:hover {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.1rem;
-    max-width: min(240px, 38vw);
+    gap: 0.15rem;
+    min-width: 0;
+    max-width: min(420px, 58vw);
     text-align: right;
 }
 
 .nav-user-name {
     font-weight: 600;
     color: var(--text);
-    font-size: 0.92rem;
+    font-size: 1.04rem;
     line-height: 1.25;
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -118,8 +121,9 @@ a:hover {
 }
 
 .nav-user-email {
-    font-size: 0.8rem;
+    font-size: 0.92rem;
     color: var(--muted);
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -434,6 +438,8 @@ select:-webkit-autofill:focus {
     color: var(--accent);
     border: none;
     padding: 0.35rem 0.5rem;
+    font-size: 1.08rem;
+    font-weight: 650;
 }
 
 .btn-block {
@@ -703,10 +709,10 @@ select:-webkit-autofill:focus {
 .eyebrow {
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    font-size: 0.72rem;
+    font-size: 1.4rem;
     color: var(--accent);
     margin: 0 0 0.5rem;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .dashboard-hero h1 {
@@ -741,7 +747,8 @@ select:-webkit-autofill:focus {
 }
 
 .breadcrumb {
-    font-size: 0.88rem;
+    font-size: 1.02rem;
+    font-weight: 600;
     color: var(--muted);
     margin-bottom: 1rem;
 }
@@ -756,6 +763,26 @@ select:-webkit-autofill:focus {
     flex-wrap: wrap;
     gap: 0.65rem;
     align-items: center;
+}
+
+.admin-dashboard-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem;
+    align-items: stretch;
+}
+
+.admin-dashboard-actions-grid .btn {
+    width: 100%;
+    font-size: 1.2rem;
+    font-weight: 600;
+    min-height: 46px;
+}
+
+@media (max-width: 760px) {
+    .admin-dashboard-actions-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .lede-email {

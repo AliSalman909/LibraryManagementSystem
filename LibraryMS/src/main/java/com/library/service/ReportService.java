@@ -54,13 +54,35 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public FineReport getFineReport() {
-        long unpaid = fineRepository.countByStatus(FineStatus.UNPAID);
+        long unpaidIssued = fineRepository.countByStatus(FineStatus.UNPAID);
         long paid = fineRepository.countByStatus(FineStatus.PAID);
         long waived = fineRepository.countByStatus(FineStatus.WAIVED);
-        BigDecimal unpaidAmount = fineRepository.sumAmountByStatus(FineStatus.UNPAID);
+        BigDecimal unpaidIssuedAmount = fineRepository.sumAmountByStatus(FineStatus.UNPAID);
         BigDecimal paidAmount = fineRepository.sumAmountByStatus(FineStatus.PAID);
         BigDecimal waivedAmount = fineRepository.sumAmountByStatus(FineStatus.WAIVED);
-        return new FineReport(unpaid, paid, waived, unpaidAmount, paidAmount, waivedAmount);
+
+        List<BorrowRecord> liveOverdue = borrowRecordRepository.findAllOverdueWithDetails(LocalDate.now());
+        long unpaidNotIssued = liveOverdue.size();
+        BigDecimal unpaidNotIssuedAmount = liveOverdue.stream()
+                .map(loan -> {
+                    long daysLate = java.time.temporal.ChronoUnit.DAYS.between(loan.getDueDate(), LocalDate.now());
+                    if (daysLate < 0) {
+                        return BigDecimal.ZERO;
+                    }
+                    return BigDecimal.valueOf(loan.getBook().getFinePerDayPkr())
+                            .multiply(BigDecimal.valueOf(daysLate));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new FineReport(
+                unpaidIssued,
+                unpaidNotIssued,
+                paid,
+                waived,
+                unpaidIssuedAmount,
+                unpaidNotIssuedAmount,
+                paidAmount,
+                waivedAmount);
     }
 
     // -----------------------------------------------------------------------
@@ -81,11 +103,30 @@ public class ReportService {
     // -----------------------------------------------------------------------
 
     public record FineReport(
-            long unpaidCount, long paidCount, long waivedCount,
-            BigDecimal unpaidAmount, BigDecimal paidAmount, BigDecimal waivedAmount) {
+            long unpaidIssuedCount,
+            long unpaidNotIssuedCount,
+            long paidCount,
+            long waivedCount,
+            BigDecimal unpaidIssuedAmount,
+            BigDecimal unpaidNotIssuedAmount,
+            BigDecimal paidAmount,
+            BigDecimal waivedAmount) {
 
-        public long totalCount() { return unpaidCount + paidCount + waivedCount; }
-        public BigDecimal totalAmount() { return unpaidAmount.add(paidAmount).add(waivedAmount); }
+        public long unpaidTotalCount() {
+            return unpaidIssuedCount + unpaidNotIssuedCount;
+        }
+
+        public BigDecimal unpaidTotalAmount() {
+            return unpaidIssuedAmount.add(unpaidNotIssuedAmount);
+        }
+
+        public long totalCount() {
+            return unpaidIssuedCount + unpaidNotIssuedCount + paidCount + waivedCount;
+        }
+
+        public BigDecimal totalAmount() {
+            return unpaidIssuedAmount.add(unpaidNotIssuedAmount).add(paidAmount).add(waivedAmount);
+        }
     }
 
     public record ActivityReport(

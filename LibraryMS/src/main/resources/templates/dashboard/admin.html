@@ -14,20 +14,19 @@
                 <p class="eyebrow">Administrator</p>
                 <h1>Welcome to the admin workspace</h1>
                 <p class="lede"><strong sec:authentication="principal.fullName">Admin</strong>
-                    <span class="lede-email">(<span sec:authentication="name">email</span>)</span> — use this area to manage users,
-                    catalog, and reports when those modules are connected.</p>
+                    <span class="lede-email">(<span sec:authentication="name">email</span>)</span></p>
                 <ul class="checklist">
                     <li>Approve registration requests and manage account lifecycle</li>
                     <li>Configure catalog and borrowing policies</li>
                     <li>Review operational reports</li>
                 </ul>
-                <p class="dashboard-actions">
-                    <a class="btn btn-primary" th:href="@{/admin/registrations/pending}">Review pending registrations</a>
-                    <a class="btn btn-primary" th:href="@{/admin/users}">Manage user accounts</a>
-                    <a class="btn btn-primary" th:href="@{/admin/reports/overdue}">Overdue report</a>
-                    <a class="btn btn-primary" th:href="@{/admin/reports/issued}">Issued books</a>
-                    <a class="btn btn-primary" th:href="@{/admin/reports/fines}">Fine report</a>
-                    <a class="btn btn-primary" th:href="@{/admin/reports/activity}">Activity report</a>
+                <p class="dashboard-actions admin-dashboard-actions-grid">
+                    <a class="btn btn-primary" th:href="@{/admin/registrations/pending}">Review Pending Registrations</a>
+                    <a class="btn btn-primary" th:href="@{/admin/users}">Manage User Accounts</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/overdue}">Overdue Report</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/issued}">Issued Books</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/fines}">Fine Report</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/activity}">Activity Report</a>
                 </p>
             </div>
         </div>

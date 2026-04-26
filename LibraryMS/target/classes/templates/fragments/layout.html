@@ -17,11 +17,6 @@
                 <a class="btn btn-outline" th:href="@{/register}">Create account</a>
             </th:block>
             <th:block sec:authorize="isAuthenticated()">
-                <span th:if="${#authentication.principal.profilePicture != null}" class="header-avatar-slot">
-                    <img th:src="${#authentication.principal.profilePicture}"
-                         class="header-avatar" alt=""
-                         th:style="|object-position: ${#authentication.principal.profilePictureFocalXEffective}% ${#authentication.principal.profilePictureFocalYEffective}%|"/>
-                </span>
                 <span class="nav-user-block">
                     <span class="nav-user-name" sec:authentication="principal.fullName"></span>
                     <span class="nav-user-email" sec:authentication="name"></span>
