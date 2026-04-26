@@ -14,14 +14,13 @@
                 <p class="eyebrow">Student</p>
                 <h1>Welcome to your library portal</h1>
                 <p class="lede"><strong sec:authentication="principal.fullName">Student</strong>
-                    <span class="lede-email">(<span sec:authentication="name">email</span>)</span> — borrowing, due dates, and
-                    reservations will appear here as the catalog module is wired in.</p>
+                    <span class="lede-email">(<span sec:authentication="name">email</span>)</span></p>
                 <ul class="checklist">
                     <li>Browse and request titles</li>
                     <li>Track loans and return dates</li>
                     <li>Stay within your borrowing limit</li>
                 </ul>
-                <div class="dashboard-actions">
+                <div class="dashboard-actions student-dashboard-actions-grid">
                     <a class="btn btn-primary portal-primary-action" th:href="@{/student/books}">Search books</a>
                     <a class="btn btn-primary portal-primary-action" th:href="@{/student/borrow-requests}">My requests</a>
                     <a class="btn btn-primary portal-primary-action" th:href="@{/student/my-loans}">My loans</a>

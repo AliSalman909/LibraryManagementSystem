@@ -115,8 +115,12 @@ a:hover {
     line-height: 1.25;
     display: block;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
     max-width: 100%;
 }
 
@@ -125,8 +129,12 @@ a:hover {
     color: var(--muted);
     display: block;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-clamp: 2;
     max-width: 100%;
 }
 
@@ -763,6 +771,36 @@ select:-webkit-autofill:focus {
     flex-wrap: wrap;
     gap: 0.65rem;
     align-items: center;
+}
+
+.student-dashboard-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem;
+    align-items: stretch;
+}
+
+.student-dashboard-actions-grid .btn {
+    width: 100%;
+}
+
+/* Keep first four buttons in a 2x2 grid; center the last action below them. */
+.student-dashboard-actions-grid .btn:nth-child(5) {
+    grid-column: 1 / -1;
+    width: min(320px, 100%);
+    justify-self: center;
+}
+
+@media (max-width: 760px) {
+    .student-dashboard-actions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .student-dashboard-actions-grid .btn:nth-child(5) {
+        grid-column: auto;
+        width: 100%;
+        justify-self: stretch;
+    }
 }
 
 .admin-dashboard-actions-grid {

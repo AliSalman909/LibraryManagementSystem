@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -175,13 +176,20 @@ public class AdminUserAccountService {
         User user = loadManagedUser(storedUserId);
         assertNotAdmin(user);
         String uid = user.getUserId();
-        notificationRepository.deleteAllForUser(uid);
-        registrationRequestRepository.deleteAllForUser(uid);
-        deletionRequestRepository.deleteAllForUser(uid);
-        studentRepository.deleteById(uid);
-        librarianRepository.deleteById(uid);
-        adminProfileRepository.deleteById(uid);
-        userRepository.deleteById(uid);
+        try {
+            notificationRepository.deleteAllForUser(uid);
+            registrationRequestRepository.deleteAllForUser(uid);
+            deletionRequestRepository.deleteAllForUser(uid);
+            studentRepository.deleteById(uid);
+            librarianRepository.deleteById(uid);
+            adminProfileRepository.deleteById(uid);
+            userRepository.deleteById(uid);
+        } catch (DataIntegrityViolationException ex) {
+            throw new BusinessRuleException(
+                    "This account cannot be permanently deleted because related history exists in other records (for"
+                            + " example loans, fines, or activity logs). Resolve related data first or keep the account"
+                            + " in a non-active status.");
+        }
     }
 
     private User loadManagedUser(String userId) {
