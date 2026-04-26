@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.library.entity.BorrowRecord;
 import com.library.exception.BusinessRuleException;
@@ -60,7 +61,11 @@ public class BorrowRequestController {
     }
 
     @GetMapping("/student/borrow-requests")
-    public String studentRequests(@AuthenticationPrincipal LibraryUserDetails principal, Model model) {
+    public String studentRequests(
+            @AuthenticationPrincipal LibraryUserDetails principal,
+            Model model,
+            HttpServletResponse response) {
+        applyNoStore(response);
         model.addAttribute("requests", borrowRequestService.listForStudent(principal.getUserId()));
         return "student/borrow-requests";
     }
@@ -78,5 +83,11 @@ public class BorrowRequestController {
             redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
         }
         return "redirect:/student/borrow-requests";
+    }
+
+    private static void applyNoStore(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
     }
 }

@@ -26,6 +26,10 @@ public class BookForm {
     @Min(value = 1, message = "Fine per day must be at least 1 PKR.")
     private Integer finePerDayPkr;
 
+    @NotNull(message = "Max borrow duration is required.")
+    @Min(value = 7, message = "Max borrow duration must be at least 7 days.")
+    private Integer maxBorrowDays;
+
     public String getTitle() {
         return title;
     }
@@ -64,5 +68,13 @@ public class BookForm {
 
     public void setFinePerDayPkr(Integer finePerDayPkr) {
         this.finePerDayPkr = finePerDayPkr;
+    }
+
+    public Integer getMaxBorrowDays() {
+        return maxBorrowDays;
+    }
+
+    public void setMaxBorrowDays(Integer maxBorrowDays) {
+        this.maxBorrowDays = maxBorrowDays;
     }
 }

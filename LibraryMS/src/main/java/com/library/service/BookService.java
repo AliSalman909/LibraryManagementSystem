@@ -28,6 +28,7 @@ public class BookService {
     private static final String PLAIN_BOOK_ID_ALPHABET = Book.PLAIN_BOOK_ID_ALPHABET;
     private static final int PLAIN_BOOK_ID_LENGTH = Book.PLAIN_BOOK_ID_LENGTH;
     private static final int DEFAULT_FINE_PER_DAY_PKR = 50;
+    private static final int DEFAULT_MAX_BORROW_DAYS = 28;
 
     public BookService(BookRepository bookRepository, BookCopyRepository bookCopyRepository) {
         this.bookRepository = bookRepository;
@@ -38,6 +39,7 @@ public class BookService {
     @Transactional
     public void backfillDefaultFinePerDay() {
         bookRepository.backfillMissingFinePerDay(DEFAULT_FINE_PER_DAY_PKR);
+        bookRepository.backfillMissingMaxBorrowDays(DEFAULT_MAX_BORROW_DAYS);
     }
 
     @Transactional(readOnly = true)
@@ -88,6 +90,7 @@ public class BookService {
         int finePerDayPkr = requireFinePerDay(bookFormFine(form));
         book.setFinePerDayPkr(finePerDayPkr);
         book.setFinePerDay(BigDecimal.valueOf(finePerDayPkr));
+        book.setMaxBorrowDays(requireMaxBorrowDays(bookFormMaxBorrowDays(form)));
         book.setCreatedAt(Instant.now());
         book.setUpdatedAt(Instant.now());
         Book saved = bookRepository.save(book);
@@ -138,6 +141,7 @@ public class BookService {
         int finePerDayPkr = requireFinePerDay(bookFormFine(form));
         book.setFinePerDayPkr(finePerDayPkr);
         book.setFinePerDay(BigDecimal.valueOf(finePerDayPkr));
+        book.setMaxBorrowDays(requireMaxBorrowDays(bookFormMaxBorrowDays(form)));
         int newAvailableCopies = form.getTotalCopies() - activeBorrowedCopies;
         book.setAvailableCopies(newAvailableCopies);
         book.setUpdatedAt(Instant.now());
@@ -269,10 +273,24 @@ public class BookService {
         return form.getFinePerDayPkr();
     }
 
+    private int bookFormMaxBorrowDays(BookForm form) {
+        if (form.getMaxBorrowDays() == null) {
+            throw new BusinessRuleException("Max borrow duration is required.");
+        }
+        return form.getMaxBorrowDays();
+    }
+
     private int requireFinePerDay(int finePerDayPkr) {
         if (finePerDayPkr < 1) {
             throw new BusinessRuleException("Fine per day must be at least 1 PKR.");
         }
         return finePerDayPkr;
+    }
+
+    private int requireMaxBorrowDays(int maxBorrowDays) {
+        if (maxBorrowDays != 7 && maxBorrowDays != 14 && maxBorrowDays != 21 && maxBorrowDays != 28) {
+            throw new BusinessRuleException("Max borrow duration must be one of: 7, 14, 21, or 28 days.");
+        }
+        return maxBorrowDays;
     }
 }

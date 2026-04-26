@@ -79,4 +79,13 @@ public interface BookRepository extends JpaRepository<Book, String> {
             where b.finePerDayPkr <= 0
             """)
     int backfillMissingFinePerDay(@Param("defaultFine") int defaultFine);
+
+    @Modifying
+    @Transactional
+    @Query("""
+            update Book b
+            set b.maxBorrowDays = :defaultMaxBorrowDays
+            where b.maxBorrowDays <= 0
+            """)
+    int backfillMissingMaxBorrowDays(@Param("defaultMaxBorrowDays") int defaultMaxBorrowDays);
 }

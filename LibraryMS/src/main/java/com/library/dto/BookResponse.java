@@ -10,6 +10,7 @@ public class BookResponse {
     private int totalCopies;
     private int availableCopies;
     private int finePerDayPkr;
+    private int maxBorrowDays;
 
     public String getId() {
         return id;
@@ -73,5 +74,13 @@ public class BookResponse {
 
     public void setFinePerDayPkr(int finePerDayPkr) {
         this.finePerDayPkr = finePerDayPkr;
+    }
+
+    public int getMaxBorrowDays() {
+        return maxBorrowDays;
+    }
+
+    public void setMaxBorrowDays(int maxBorrowDays) {
+        this.maxBorrowDays = maxBorrowDays;
     }
 }

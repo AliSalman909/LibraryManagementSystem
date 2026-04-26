@@ -35,6 +35,7 @@ public class LibrarianBookController {
             BookForm form = new BookForm();
             form.setTotalCopies(1);
             form.setFinePerDayPkr(50);
+            form.setMaxBorrowDays(28);
             model.addAttribute("bookForm", form);
         }
         return "librarian/books";
@@ -75,6 +76,7 @@ public class LibrarianBookController {
         form.setCategory(book.getCategory());
         form.setTotalCopies(book.getTotalCopies());
         form.setFinePerDayPkr(book.getFinePerDayPkr());
+        form.setMaxBorrowDays(book.getMaxBorrowDays());
         model.addAttribute("bookId", book.getBookId());
         model.addAttribute("bookForm", form);
         return "librarian/book-edit";

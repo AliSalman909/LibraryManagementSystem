@@ -45,6 +45,16 @@
                     <input id="finePerDayPkr" class="input" type="number" th:field="*{finePerDayPkr}" min="1" required/>
                     <p class="field-error" th:if="${#fields.hasErrors('finePerDayPkr')}" th:errors="*{finePerDayPkr}">Invalid fine</p>
                 </div>
+                <div class="field">
+                    <label for="maxBorrowDays">Max borrow duration</label>
+                    <select id="maxBorrowDays" class="input" th:field="*{maxBorrowDays}" required>
+                        <option value="7">7 days</option>
+                        <option value="14">14 days</option>
+                        <option value="21">21 days</option>
+                        <option value="28">28 days</option>
+                    </select>
+                    <p class="field-error" th:if="${#fields.hasErrors('maxBorrowDays')}" th:errors="*{maxBorrowDays}">Invalid max duration</p>
+                </div>
             </div>
             <div class="dashboard-actions">
                 <button type="submit" class="btn btn-primary">Save changes</button>

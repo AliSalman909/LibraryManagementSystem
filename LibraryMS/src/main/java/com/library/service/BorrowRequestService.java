@@ -27,7 +27,6 @@ import com.library.repository.StudentRepository;
 public class BorrowRequestService {
     private static final int MAX_ACTIVE_UNIQUE_BOOKS = 3;
     private static final int DEFAULT_LOAN_DAYS = 14;
-    private static final int ALT_LOAN_DAYS = 7;
 
     private final BorrowRequestRepository borrowRequestRepository;
     private final BorrowRecordRepository borrowRecordRepository;
@@ -105,7 +104,7 @@ public class BorrowRequestService {
         request.setStudent(student);
         request.setStatus(BorrowRequestStatus.PENDING);
         request.setRequestedAt(Instant.now());
-        request.setRequestedDurationDays(normalizeDuration(durationDays));
+        request.setRequestedDurationDays(normalizeDuration(durationDays, book.getMaxBorrowDays()));
         return borrowRequestRepository.save(request);
     }
 
@@ -230,22 +229,28 @@ public class BorrowRequestService {
             return today.plusDays(DEFAULT_LOAN_DAYS);
         }
         if (!isSupportedDuration(durationDays)) {
-            throw new BusinessRuleException("durationDays must be either 7 or 14.");
+            throw new BusinessRuleException("durationDays must be one of: 7, 14, 21, or 28.");
         }
         return today.plusDays(durationDays);
     }
 
-    private int normalizeDuration(Integer durationDays) {
+    private int normalizeDuration(Integer durationDays, int maxBorrowDays) {
         if (durationDays == null) {
-            return DEFAULT_LOAN_DAYS;
+            return Math.min(DEFAULT_LOAN_DAYS, maxBorrowDays);
         }
         if (!isSupportedDuration(durationDays)) {
-            throw new BusinessRuleException("Borrow duration must be 7 or 14 days.");
+            throw new BusinessRuleException("Borrow duration must be one of: 7, 14, 21, or 28 days.");
+        }
+        if (durationDays > maxBorrowDays) {
+            throw new BusinessRuleException(
+                    "This book allows borrowing up to "
+                            + maxBorrowDays
+                            + " days. Please choose a duration within this limit.");
         }
         return durationDays;
     }
 
     private boolean isSupportedDuration(int days) {
-        return days == DEFAULT_LOAN_DAYS || days == ALT_LOAN_DAYS;
+        return days == 7 || days == 14 || days == 21 || days == 28;
     }
 }

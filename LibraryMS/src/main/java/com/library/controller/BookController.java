@@ -92,6 +92,7 @@ public class BookController {
         response.setTotalCopies(book.getTotalCopies());
         response.setAvailableCopies(book.getAvailableCopies());
         response.setFinePerDayPkr(book.getFinePerDayPkr());
+        response.setMaxBorrowDays(book.getMaxBorrowDays());
         return response;
     }
 }

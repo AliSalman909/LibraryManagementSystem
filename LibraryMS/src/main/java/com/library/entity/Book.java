@@ -53,6 +53,9 @@ public class Book {
     @Column(name = "fine_per_day_pkr", nullable = false)
     private int finePerDayPkr = 50;
 
+    @Column(name = "max_borrow_days", nullable = false)
+    private int maxBorrowDays = 28;
+
     /**
      * Legacy column kept for existing schemas.
      * Mirrors finePerDayPkr (1 PKR == 1.00 in this column).
@@ -142,6 +145,14 @@ public class Book {
 
     public void setFinePerDay(BigDecimal finePerDay) {
         this.finePerDay = finePerDay;
+    }
+
+    public int getMaxBorrowDays() {
+        return maxBorrowDays;
+    }
+
+    public void setMaxBorrowDays(int maxBorrowDays) {
+        this.maxBorrowDays = maxBorrowDays;
     }
 
     public Instant getCreatedAt() {
