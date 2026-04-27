@@ -30,15 +30,19 @@ public class StudentLoanController {
         var activeLoans = renewalService.listActiveLoansForStudent(principal.getUserId());
         // Pre-compute renew-ability per record so the template can show/hide the button
         var canRenewMap = new java.util.HashMap<String, Boolean>();
+        var renewOptionsMap = new java.util.HashMap<String, java.util.List<Integer>>();
         for (var loan : activeLoans) {
             canRenewMap.put(loan.getRecordId(), renewalService.canRenew(loan, principal.getUserId()));
+            renewOptionsMap.put(loan.getRecordId(), renewalService.allowedRenewDurations(loan));
         }
         model.addAttribute("activeLoans", activeLoans);
         model.addAttribute("canRenewMap", canRenewMap);
+        model.addAttribute("renewOptionsMap", renewOptionsMap);
+        model.addAttribute("maxRenewals", renewalService.getMaxRenewals());
         return "student/my-loans";
     }
 
-    /** Renews a loan by 7 or 14 days. */
+    /** Renews a loan by one of the allowed day options for that book. */
     @PostMapping("/student/my-loans/{recordId}/renew")
     public String renewLoan(
             @PathVariable String recordId,

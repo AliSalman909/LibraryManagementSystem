@@ -9,6 +9,7 @@ import com.library.repository.ReservationRepository;
 import com.library.entity.enums.ReservationStatus;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,18 +19,19 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Business rules:</p>
  * <ul>
  *   <li>Loan must be active (not returned).</li>
- *   <li>Max 1 renewal per loan.</li>
+ *   <li>Max 3 renewals per loan.</li>
  *   <li>Blocked if student has any unpaid fine.</li>
+ *   <li>Blocked if loan is overdue.</li>
  *   <li>Blocked if book has pending/ready reservations by other users.</li>
- *   <li>Extension duration: 7 or 14 days from current due date.</li>
+ *   <li>Extension duration options: 7/14/21/28 days, capped by the book's max borrow days.</li>
  * </ul>
  */
 @Service
 public class RenewalService {
 
-    private static final int MAX_RENEWALS = 1;
+    private static final int MAX_RENEWALS = 3;
     private static final int DEFAULT_RENEW_DAYS = 14;
-    private static final int ALT_RENEW_DAYS = 7;
+    private static final List<Integer> SUPPORTED_RENEW_DURATIONS = List.of(7, 14, 21, 28);
 
     private static final List<ReservationStatus> ACTIVE_RES_STATUSES =
             List.of(ReservationStatus.PENDING, ReservationStatus.READY);
@@ -57,10 +59,9 @@ public class RenewalService {
      */
     @Transactional
     public BorrowRecord renewLoan(String recordId, String studentUserId, Integer durationDays) {
-        int days = normalizeDuration(durationDays);
-
         BorrowRecord record = borrowRecordRepository.findByIdForUpdate(recordId)
                 .orElseThrow(() -> new BusinessRuleException("Borrow record not found."));
+        int days = normalizeDuration(durationDays, record);
 
         // Must be this student's own record
         if (!record.getStudent().getUserId().equals(studentUserId)) {
@@ -70,6 +71,12 @@ public class RenewalService {
         // Must be active (not returned)
         if (record.getReturnedAt() != null) {
             throw new BusinessRuleException("This loan has already been returned and cannot be renewed.");
+        }
+
+        LocalDate today = LocalDate.now();
+        if (record.getDueDate().isBefore(today)) {
+            throw new BusinessRuleException(
+                    "This loan is overdue. Please return the book and clear any fine before requesting it again.");
         }
 
         // Max renewals check
@@ -98,9 +105,8 @@ public class RenewalService {
             record.setOriginalDueDate(record.getDueDate());
         }
 
-        // Extend from current due date (or from today if already overdue, to avoid extending from the past)
-        LocalDate today = LocalDate.now();
-        LocalDate base = record.getDueDate().isBefore(today) ? today : record.getDueDate();
+        // Extend from the current due date.
+        LocalDate base = record.getDueDate();
         record.setDueDate(base.plusDays(days));
         record.setRenewCount(record.getRenewCount() + 1);
         record.setLastRenewedAt(now);
@@ -118,21 +124,44 @@ public class RenewalService {
      */
     @Transactional(readOnly = true)
     public boolean canRenew(BorrowRecord record, String studentUserId) {
+        LocalDate today = LocalDate.now();
         if (record.getReturnedAt() != null) return false;
+        if (record.getDueDate().isBefore(today)) return false;
         if (record.getRenewCount() >= MAX_RENEWALS) return false;
         if (fineRepository.existsByStudentUserIdAndStatus(studentUserId, FineStatus.UNPAID)) return false;
-        if (reservationRepository.countByBookAndStatusIn(
-                record.getBook().getBookId(), ACTIVE_RES_STATUSES) > 0) return false;
-        return true;
+        return reservationRepository.countByBookAndStatusIn(
+                        record.getBook().getBookId(), ACTIVE_RES_STATUSES)
+                == 0;
     }
 
-    private int normalizeDuration(Integer durationDays) {
-        if (durationDays == null) {
-            return DEFAULT_RENEW_DAYS;
+    @Transactional(readOnly = true)
+    public List<Integer> allowedRenewDurations(BorrowRecord record) {
+        int maxBorrowDays = record.getBook().getMaxBorrowDays();
+        List<Integer> allowed = new ArrayList<>();
+        for (Integer d : SUPPORTED_RENEW_DURATIONS) {
+            if (d <= maxBorrowDays) {
+                allowed.add(d);
+            }
         }
-        if (durationDays != DEFAULT_RENEW_DAYS && durationDays != ALT_RENEW_DAYS) {
-            throw new BusinessRuleException("Renewal duration must be 7 or 14 days.");
+        if (allowed.isEmpty()) {
+            allowed.add(Math.min(DEFAULT_RENEW_DAYS, maxBorrowDays));
         }
-        return durationDays;
+        return allowed;
+    }
+
+    public int getMaxRenewals() {
+        return MAX_RENEWALS;
+    }
+
+    private int normalizeDuration(Integer durationDays, BorrowRecord record) {
+        List<Integer> allowedDurations = allowedRenewDurations(record);
+        int selectedDays = durationDays == null ? DEFAULT_RENEW_DAYS : durationDays;
+        if (!allowedDurations.contains(selectedDays)) {
+            throw new BusinessRuleException(
+                    "Renewal duration is not allowed for this book. Please choose one of: "
+                            + allowedDurations
+                            + " days.");
+        }
+        return selectedDays;
     }
 }

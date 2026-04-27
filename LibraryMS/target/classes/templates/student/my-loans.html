@@ -16,7 +16,7 @@
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Circulation</p>
         <h1>My Active Loans</h1>
-        <p class="lede">Books you currently have checked out. You may renew each loan once for 7 or 14 days, provided you have no unpaid fines.</p>
+        <p class="lede">You can renew a loan up to 3 times. After 3 renewals, return the book and place a new borrow request; if unavailable, reserve it.</p>
 
         <div class="table-wrap">
             <table class="data-table">
@@ -51,7 +51,7 @@
                               class="status-pill status-pill--active">Active</span>
                     </td>
                     <td data-label="Renewals">
-                        <span th:text="${loan.renewCount + ' / 1'}">0 / 1</span>
+                        <span th:text="${loan.renewCount + ' / ' + maxRenewals}">0 / 3</span>
                         <div th:if="${loan.originalDueDate != null}" class="muted-note"
                              th:text="'Original due: ' + ${loan.originalDueDate}">Original</div>
                     </td>
@@ -62,13 +62,17 @@
                                   method="post">
                                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                 <select name="durationDays" class="input renew-select">
-                                    <option value="14">14 days</option>
-                                    <option value="7">7 days</option>
+                                    <option th:each="days : ${renewOptionsMap[loan.recordId]}"
+                                            th:value="${days}"
+                                            th:text="${days + ' days'}">14 days</option>
                                 </select>
                                 <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.35rem;">Renew</button>
                             </form>
                         </th:block>
-                        <span th:if="${!canRenewMap[loan.recordId]}" class="muted-note">—</span>
+                        <span th:if="${!canRenewMap[loan.recordId] and loan.dueDate.isBefore(T(java.time.LocalDate).now())}"
+                              class="muted-note">Overdue: return and pay fine first.</span>
+                        <span th:if="${!canRenewMap[loan.recordId] and !loan.dueDate.isBefore(T(java.time.LocalDate).now())}"
+                              class="muted-note">Renewal not available.</span>
                     </td>
                 </tr>
                 </tbody>
