@@ -42,6 +42,7 @@ public class AdminUserAccountService {
     private final StudentRepository studentRepository;
     private final LibrarianRepository librarianRepository;
     private final AdminProfileRepository adminProfileRepository;
+    private final ProfilePictureStorageService profilePictureStorageService;
 
     public AdminUserAccountService(
             UserRepository userRepository,
@@ -52,7 +53,8 @@ public class AdminUserAccountService {
             DeletionRequestRepository deletionRequestRepository,
             StudentRepository studentRepository,
             LibrarianRepository librarianRepository,
-            AdminProfileRepository adminProfileRepository) {
+            AdminProfileRepository adminProfileRepository,
+            ProfilePictureStorageService profilePictureStorageService) {
         this.userRepository = userRepository;
         this.passwordEncryptionService = passwordEncryptionService;
         this.userIdEncryptionService = userIdEncryptionService;
@@ -62,6 +64,7 @@ public class AdminUserAccountService {
         this.studentRepository = studentRepository;
         this.librarianRepository = librarianRepository;
         this.adminProfileRepository = adminProfileRepository;
+        this.profilePictureStorageService = profilePictureStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -176,6 +179,7 @@ public class AdminUserAccountService {
         User user = loadManagedUser(storedUserId);
         assertNotAdmin(user);
         String uid = user.getUserId();
+        String profilePicture = user.getProfilePicture();
         try {
             notificationRepository.deleteAllForUser(uid);
             registrationRequestRepository.deleteAllForUser(uid);
@@ -184,6 +188,7 @@ public class AdminUserAccountService {
             librarianRepository.deleteById(uid);
             adminProfileRepository.deleteById(uid);
             userRepository.deleteById(uid);
+            profilePictureStorageService.deleteByWebPath(profilePicture);
         } catch (DataIntegrityViolationException ex) {
             throw new BusinessRuleException(
                     "This account cannot be permanently deleted because related history exists in other records (for"

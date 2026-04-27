@@ -31,9 +31,9 @@ public class AdminMaintenanceService {
             @Value("${spring.datasource.url}") String datasourceUrl,
             @Value("${spring.datasource.username}") String datasourceUsername,
             @Value("${spring.datasource.password}") String datasourcePassword,
-            @Value("${app.maintenance.backup.dir:${user.dir}/../backups}") String backupDirectory,
+            @Value("${app.maintenance.backup.dir:${user.dir}/../DB_BackUP}") String backupDirectory,
             @Value("${app.maintenance.backup.filename:library_db_backup.sql}") String backupFilename,
-            @Value("${app.maintenance.cleanup.paths:${app.maintenance.temp.dir:${java.io.tmpdir}/library-management}}")
+            @Value("${app.maintenance.cleanup.paths:${app.maintenance.temp.dir:${user.dir}/../tmp/library-management}}")
                     String cleanupPathsRaw) {
         this.datasourceUrl = datasourceUrl;
         this.datasourceUsername = datasourceUsername;

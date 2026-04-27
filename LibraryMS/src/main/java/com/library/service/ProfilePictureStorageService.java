@@ -9,7 +9,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.Locale;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,8 +37,8 @@ public class ProfilePictureStorageService {
     }
 
     /**
-     * Saves the file under the configured project directory and returns the web path
-     * (e.g. {@code /uploads/profiles/userId-uuid.jpg}) to store in the database.
+     * Saves the file under the configured project directory and returns the plain filename
+     * (e.g. {@code userId-uuid.jpg}) to store in the database.
      */
     public String store(MultipartFile file, String userId) {
         if (file == null || file.isEmpty()) {
@@ -62,7 +61,7 @@ public class ProfilePictureStorageService {
             throw new BusinessRuleException(
                     "The file name should end with .jpg, .png, .gif, or .webp so we know it is a supported image.");
         }
-        String filename = userId + "-" + UUID.randomUUID() + ext;
+        String filename = resolveStoredFilename(file.getOriginalFilename(), ext);
         try {
             Files.createDirectories(uploadRoot);
             Path target = uploadRoot.resolve(filename).normalize();
@@ -74,16 +73,16 @@ public class ProfilePictureStorageService {
             throw new BusinessRuleException(
                     "We could not save your profile photo. Please try again in a moment or pick a different file.");
         }
-        return "/uploads/profiles/" + filename;
+        return filename;
     }
 
     /**
-     * Deletes a previously stored profile photo by its web path (returned from {@link #store}).
+     * Deletes a previously stored profile photo by its stored filename/path (returned from {@link #store}).
      *
      * <p>This is used to keep file-system and DB consistent when a DB transaction fails and rolls back.
      */
-    public void deleteByWebPath(String webPath) {
-        Optional.ofNullable(webPath)
+    public void deleteByWebPath(String storedValue) {
+        Optional.ofNullable(storedValue)
                 .filter(p -> !p.isBlank())
                 .ifPresent(
                         p -> {
@@ -113,18 +112,29 @@ public class ProfilePictureStorageService {
         if (contentType == null) {
             return null;
         }
-        switch (contentType.toLowerCase(Locale.ROOT)) {
-            case "image/jpeg":
-                return ".jpg";
-            case "image/png":
-                return ".png";
-            case "image/gif":
-                return ".gif";
-            case "image/webp":
-                return ".webp";
-            default:
-                return null;
+        return switch (contentType.toLowerCase(Locale.ROOT)) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png" -> ".png";
+            case "image/gif" -> ".gif";
+            case "image/webp" -> ".webp";
+            default -> null;
+        };
+    }
+
+    private String resolveStoredFilename(String originalFilename, String fallbackExt) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return "uploaded-image" + fallbackExt;
         }
+        String leaf = Paths.get(originalFilename).getFileName().toString().trim();
+        if (leaf.isBlank()) {
+            return "uploaded-image" + fallbackExt;
+        }
+        String sanitized = leaf.replaceAll("[\\\\/:*?\"<>|]", "_");
+        // Guard against names without extension after sanitization.
+        if (!sanitized.contains(".")) {
+            return sanitized + fallbackExt;
+        }
+        return sanitized;
     }
 
     /**

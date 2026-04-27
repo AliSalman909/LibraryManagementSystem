@@ -26,7 +26,7 @@ public class LibraryUserDetails implements UserDetails {
         this.fullName = user.getFullName() != null ? user.getFullName() : "";
         this.email = user.getEmail();
         this.passwordHash = user.getPasswordHash();
-        this.profilePicture = user.getProfilePicture();
+        this.profilePicture = resolveProfilePictureUrl(user.getProfilePicture());
         this.profilePictureFocalX = user.getProfilePictureFocalX();
         this.profilePictureFocalY = user.getProfilePictureFocalY();
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name()));
@@ -56,11 +56,11 @@ public class LibraryUserDetails implements UserDetails {
         return profilePictureFocalY;
     }
 
-    public double getProfilePictureFocalXEffective() {
+    public Double getProfilePictureFocalXEffective() {
         return profilePictureFocalX != null ? profilePictureFocalX : 50.0;
     }
 
-    public double getProfilePictureFocalYEffective() {
+    public Double getProfilePictureFocalYEffective() {
         return profilePictureFocalY != null ? profilePictureFocalY : 50.0;
     }
 
@@ -97,5 +97,16 @@ public class LibraryUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    private static String resolveProfilePictureUrl(String storedValue) {
+        if (storedValue == null || storedValue.isBlank()) {
+            return storedValue;
+        }
+        // Backward compatible: old rows may store '/uploads/profiles/file.jpg'
+        if (storedValue.startsWith("/uploads/profiles/")) {
+            return storedValue;
+        }
+        return "/uploads/profiles/" + storedValue;
     }
 }
