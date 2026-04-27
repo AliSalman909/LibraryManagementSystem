@@ -419,7 +419,7 @@ select:-webkit-autofill:focus {
     padding: 0.6rem 1rem;
     font-family: var(--font);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     line-height: 1.2;
 }
 
@@ -774,6 +774,24 @@ select:-webkit-autofill:focus {
     align-items: center;
 }
 
+.librarian-dashboard-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem;
+    align-items: stretch;
+}
+
+.librarian-dashboard-actions-grid .btn {
+    width: 90%;
+}
+
+/* Keep first four buttons in a 2x2 grid; center the last action below them. */
+.librarian-dashboard-actions-grid .btn:nth-child(5) {
+    grid-column: 1 / -1;
+    width: min(320px, 100%);
+    justify-self: center;
+}
+
 .student-dashboard-actions-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -795,6 +813,16 @@ select:-webkit-autofill:focus {
 }
 
 @media (max-width: 760px) {
+    .librarian-dashboard-actions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .librarian-dashboard-actions-grid .btn:nth-child(5) {
+        grid-column: auto;
+        width: 100%;
+        justify-self: stretch;
+    }
+
     .student-dashboard-actions-grid {
         grid-template-columns: 1fr;
     }

@@ -14,19 +14,18 @@
                 <p class="eyebrow">Librarian</p>
                 <h1>Welcome to the librarian desk</h1>
                 <p class="lede"><strong sec:authentication="principal.fullName">Librarian</strong>
-                    <span class="lede-email">(<span sec:authentication="name">email</span>)</span> — this dashboard will host circulation,
-            holds, and reader support tools.</p>
+                    <span class="lede-email">(<span sec:authentication="name">email</span>)</span></p>
                 <ul class="checklist">
                     <li>Check books in and out</li>
                     <li>Approve or extend borrowing when enabled</li>
                     <li>Assist students with catalog searches</li>
                 </ul>
-                <div class="dashboard-actions">
-                    <a class="btn btn-primary" th:href="@{/librarian/books}">Manage books</a>
-                    <a class="btn btn-primary" th:href="@{/librarian/borrow-requests}">Review borrow requests</a>
-                    <a class="btn btn-primary" th:href="@{/librarian/active-loans}">Active loans</a>
-                    <a class="btn btn-primary" th:href="@{/librarian/fines}">Fines</a>
-                    <a class="btn btn-primary" th:href="@{/librarian/reservations}">Reservations</a>
+                <div class="dashboard-actions librarian-dashboard-actions-grid">
+                    <a class="btn btn-primary librarian-primary-action" th:href="@{/librarian/books}">Manage books</a>
+                    <a class="btn btn-primary librarian-primary-action" th:href="@{/librarian/borrow-requests}">Review borrow requests</a>
+                    <a class="btn btn-primary librarian-primary-action" th:href="@{/librarian/active-loans}">Active loans</a>
+                    <a class="btn btn-primary librarian-primary-action" th:href="@{/librarian/fines}">Fines</a>
+                    <a class="btn btn-primary librarian-primary-action" th:href="@{/librarian/reservations}">Reservations</a>
                 </div>
             </div>
         </div>
