@@ -2,6 +2,9 @@
     const DEFAULT_POLL_MS = 5000;
     const REPORTS_POLL_MS = 2000;
     const STUDENT_REQUESTS_POLL_MS = 2000;
+    const STUDENT_FINES_POLL_MS = 2000;
+    const STUDENT_RESERVATIONS_POLL_MS = 2000;
+    const LIBRARIAN_RESERVATIONS_POLL_MS = 2000;
     let inFlight = false;
     const TABLE_WRAP_SELECTOR = ".table-wrap";
 
@@ -70,6 +73,15 @@
         }
         if (path === "/student/borrow-requests") {
             return STUDENT_REQUESTS_POLL_MS;
+        }
+        if (path === "/student/fines") {
+            return STUDENT_FINES_POLL_MS;
+        }
+        if (path === "/student/reservations") {
+            return STUDENT_RESERVATIONS_POLL_MS;
+        }
+        if (path === "/librarian/reservations") {
+            return LIBRARIAN_RESERVATIONS_POLL_MS;
         }
         return DEFAULT_POLL_MS;
     }

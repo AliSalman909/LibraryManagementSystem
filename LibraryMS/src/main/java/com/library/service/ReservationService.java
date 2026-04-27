@@ -30,6 +30,8 @@ public class ReservationService {
 
     private static final List<ReservationStatus> ACTIVE_STATUSES =
             List.of(ReservationStatus.PENDING, ReservationStatus.READY);
+    private static final List<Integer> SUPPORTED_DURATIONS = List.of(7, 14, 21, 28);
+    private static final int DEFAULT_DURATION_DAYS = 14;
 
     @Value("${app.reservation.pickup-window-hours:48}")
     private int pickupWindowHours;
@@ -58,7 +60,7 @@ public class ReservationService {
      * Create a reservation for a book when it has no available copies.
      */
     @Transactional
-    public Reservation createReservation(String studentUserId, String bookId) {
+    public Reservation createReservation(String studentUserId, String bookId, Integer durationDays) {
         Student student = studentRepository.findByUserIdWithUser(studentUserId)
                 .orElseThrow(() -> new BusinessRuleException("Student account not found."));
 
@@ -90,6 +92,7 @@ public class ReservationService {
         reservation.setBook(book);
         reservation.setStatus(ReservationStatus.PENDING);
         reservation.setQueuePosition(nextPosition);
+        reservation.setRequestedDurationDays(normalizeRequestedDuration(durationDays, book.getMaxBorrowDays()));
         reservation.setCreatedAt(Instant.now());
         return reservationRepository.save(reservation);
     }
@@ -179,6 +182,13 @@ public class ReservationService {
         if (reservation.getStatus() != ReservationStatus.READY) {
             throw new BusinessRuleException("Only READY reservations can be marked as fulfilled.");
         }
+        // Guard grant action: reservation can only be fulfilled if inventory still has a free copy.
+        int updated = bookRepository.decrementAvailableCopiesIfAvailable(
+                reservation.getBook().getBookId(), Instant.now());
+        if (updated == 0) {
+            throw new BusinessRuleException(
+                    "This reservation cannot be granted yet because no copy is currently available.");
+        }
         reservation.setStatus(ReservationStatus.FULFILLED);
         reservation.setFulfilledAt(Instant.now());
         reservationRepository.save(reservation);
@@ -238,5 +248,19 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public boolean hasActiveReservationsForBook(String bookId) {
         return reservationRepository.countByBookAndStatusIn(bookId, ACTIVE_STATUSES) > 0;
+    }
+
+    private int normalizeRequestedDuration(Integer durationDays, int maxBorrowDays) {
+        int selectedDays = durationDays == null ? DEFAULT_DURATION_DAYS : durationDays;
+        if (!SUPPORTED_DURATIONS.contains(selectedDays)) {
+            throw new BusinessRuleException("Reservation duration must be one of: 7, 14, 21, or 28 days.");
+        }
+        if (selectedDays > maxBorrowDays) {
+            throw new BusinessRuleException(
+                    "This book can be granted for up to "
+                            + maxBorrowDays
+                            + " days. Please choose a smaller duration.");
+        }
+        return selectedDays;
     }
 }

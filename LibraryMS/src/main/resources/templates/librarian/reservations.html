@@ -16,7 +16,7 @@
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Waitlist</p>
         <h1>Reservation Queue</h1>
-        <p class="lede">Manage book reservations. READY reservations need action — issue the book to the student, or let it expire.</p>
+        <p class="lede">Manage reservations in first-come, first-served order. Grant only when a copy is available; otherwise the system will block the action.</p>
 
         <!-- Filter tabs -->
         <div class="dashboard-actions" style="margin-bottom:1rem;">
@@ -41,6 +41,7 @@
                     <th>Student</th>
                     <th>Book</th>
                     <th>Queue #</th>
+                    <th>Requested Days</th>
                     <th>Status</th>
                     <th>Reserved</th>
                     <th>Pickup Deadline</th>
@@ -49,7 +50,7 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(reservations)}">
-                    <td colspan="7" class="empty-state">No reservations found.</td>
+                    <td colspan="8" class="empty-state">No reservations found.</td>
                 </tr>
                 <tr th:each="res : ${reservations}">
                     <td class="student-col">
@@ -62,6 +63,7 @@
                         <div class="muted-note" th:text="${res.book.author}">Author</div>
                     </td>
                     <td th:text="${res.queuePosition}">#1</td>
+                    <td th:text="${res.requestedDurationDays + ' days'}">14 days</td>
                     <td>
                         <span th:switch="${res.status.name()}">
                             <span th:case="'PENDING'" class="status-pill status-pill--pending">Pending</span>

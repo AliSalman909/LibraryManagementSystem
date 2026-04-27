@@ -23,6 +23,7 @@
                 <thead>
                 <tr>
                     <th>Book</th>
+                    <th>Requested Days</th>
                     <th>Queue Position</th>
                     <th>Status</th>
                     <th>Reserved On</th>
@@ -32,13 +33,14 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(reservations)}">
-                    <td colspan="6" class="empty-state">You have no reservations.</td>
+                    <td colspan="7" class="empty-state">You have no reservations.</td>
                 </tr>
                 <tr th:each="res : ${reservations}">
                     <td data-label="Book">
                         <div th:text="${res.book.title}">Title</div>
                         <div class="muted-note" th:text="${res.book.author}">Author</div>
                     </td>
+                    <td data-label="Requested Days" th:text="${res.requestedDurationDays + ' days'}">14 days</td>
                     <td data-label="Queue" th:text="${res.status.name() == 'PENDING' ? '#' + res.queuePosition : '—'}">#1</td>
                     <td data-label="Status">
                         <span th:switch="${res.status.name()}">

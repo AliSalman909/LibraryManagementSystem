@@ -44,6 +44,10 @@ public class Reservation {
     @Column(name = "queue_position", nullable = false)
     private int queuePosition;
 
+    /** Requested loan duration in days when this reservation is fulfilled. */
+    @Column(name = "requested_duration_days", nullable = false)
+    private int requestedDurationDays;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -77,6 +81,9 @@ public class Reservation {
 
     public int getQueuePosition() { return queuePosition; }
     public void setQueuePosition(int queuePosition) { this.queuePosition = queuePosition; }
+
+    public int getRequestedDurationDays() { return requestedDurationDays; }
+    public void setRequestedDurationDays(int requestedDurationDays) { this.requestedDurationDays = requestedDurationDays; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

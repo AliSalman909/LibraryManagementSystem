@@ -79,7 +79,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
             join fetch r.book b
             join fetch r.student s
             join fetch s.user
-            order by b.title asc, r.queuePosition asc
+            order by
+                case
+                    when r.status = 'PENDING' then 0
+                    when r.status = 'READY' then 1
+                    else 2
+                end asc,
+                r.createdAt asc,
+                r.queuePosition asc
             """)
     List<Reservation> findAllWithDetails();
 
@@ -92,7 +99,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
             join fetch r.student s
             join fetch s.user
             where r.status = 'READY'
-            order by r.expiresAt asc
+            order by r.notifiedAt asc, r.queuePosition asc
             """)
     List<Reservation> findAllReadyWithDetails();
 

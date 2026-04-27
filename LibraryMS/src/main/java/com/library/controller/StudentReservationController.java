@@ -35,10 +35,11 @@ public class StudentReservationController {
     @PostMapping("/student/reservations")
     public String createReservation(
             @RequestParam("bookId") String bookId,
+            @RequestParam(name = "durationDays", defaultValue = "14") Integer durationDays,
             @AuthenticationPrincipal LibraryUserDetails principal,
             RedirectAttributes redirectAttributes) {
         try {
-            var reservation = reservationService.createReservation(principal.getUserId(), bookId);
+            var reservation = reservationService.createReservation(principal.getUserId(), bookId, durationDays);
             redirectAttributes.addFlashAttribute("flashSuccess",
                     "Reservation created! You are #" + reservation.getQueuePosition() + " in the queue.");
         } catch (BusinessRuleException ex) {
