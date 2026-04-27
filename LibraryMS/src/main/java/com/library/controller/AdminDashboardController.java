@@ -29,17 +29,16 @@ public class AdminDashboardController {
         model.addAttribute("profilePictureUrl", principal.getProfilePicture());
         model.addAttribute("profilePictureFocalX", principal.getProfilePictureFocalXEffective());
         model.addAttribute("profilePictureFocalY", principal.getProfilePictureFocalYEffective());
-        model.addAttribute("lastAutoMaintenanceAt", adminMaintenanceService.getLastAutoMaintenanceAt());
         return "dashboard/admin";
     }
 
     @PostMapping("/maintenance/backup")
     public String runBackupAndCleanup(RedirectAttributes redirectAttributes) {
         try {
-            AdminMaintenanceService.MaintenanceResult result = adminMaintenanceService.backupAndCleanup();
+            adminMaintenanceService.backupAndCleanup();
             redirectAttributes.addFlashAttribute(
                     "flashSuccess",
-                    "Maintenance Complete. Backup Done !!! Removed temporary files and reclaimed Storage");
+                    "Maintenance Complete. Backup Done !. Removed temporary files and reclaimed Storage");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
         }
@@ -49,10 +48,10 @@ public class AdminDashboardController {
     @PostMapping("/maintenance/restore")
     public String restoreFromBackup(RedirectAttributes redirectAttributes) {
         try {
-            AdminMaintenanceService.RestoreResult result = adminMaintenanceService.restoreFromLatestBackup();
+            adminMaintenanceService.restoreFromLatestBackup();
             redirectAttributes.addFlashAttribute(
                     "flashSuccess",
-                    "Restore complete from backup file Sucessfully!!!.");
+                    "Restore complete from backup file Sucessfully !.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
         }

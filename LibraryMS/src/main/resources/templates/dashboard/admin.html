@@ -37,13 +37,6 @@
                 <div class="admin-identity-row">
                     <p class="lede"><strong sec:authentication="principal.fullName">Admin</strong>
                         <span class="lede-email">(<span sec:authentication="name">email</span>)</span></p>
-                    <p class="muted-note admin-auto-backup-note" th:if="${lastAutoMaintenanceAt != null}">
-                        Last auto-backup:
-                        <strong th:text="${#temporals.format(lastAutoMaintenanceAt, 'yyyy-MM-dd HH:mm:ss', #locale)}">2026-01-01 10:00:00</strong>
-                    </p>
-                    <p class="muted-note admin-auto-backup-note" th:if="${lastAutoMaintenanceAt == null}">
-                        Last auto-backup: waiting for next database write.
-                    </p>
                 </div>
                 <ul class="checklist">
                     <li>Approve registration requests and manage account lifecycle</li>

@@ -18,8 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AdminMaintenanceService {
 
-    private volatile Instant lastAutoMaintenanceAt;
-
     private final String datasourceUrl;
     private final String datasourceUsername;
     private final String datasourcePassword;
@@ -56,22 +54,6 @@ public class AdminMaintenanceService {
                 stats.deletedFiles(),
                 stats.freedBytes(),
                 Instant.now());
-    }
-
-    /** Silent mode for automatic post-commit maintenance (no user-facing message flow). */
-    @Transactional
-    public void backupAndCleanupSilently() {
-        try {
-            backupAndCleanup();
-            lastAutoMaintenanceAt = Instant.now();
-        } catch (RuntimeException ignored) {
-            // Intentionally swallow failures for automatic maintenance.
-            // Manual admin-triggered actions still surface explicit errors.
-        }
-    }
-
-    public Instant getLastAutoMaintenanceAt() {
-        return lastAutoMaintenanceAt;
     }
 
     @Transactional

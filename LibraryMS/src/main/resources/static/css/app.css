@@ -732,6 +732,7 @@ select:-webkit-autofill:focus {
     margin: 0 0 1.25rem;
     color: var(--muted);
     max-width: 52ch;
+    font-size: 1.2rem;
 }
 
 .checklist {
@@ -843,12 +844,6 @@ select:-webkit-autofill:focus {
     margin-bottom: 0.75rem;
 }
 
-.admin-auto-backup-note {
-    margin-right: 50px;
-    text-align: right;
-    white-space: nowrap;
-}
-
 .admin-maintenance-actions {
     display: flex;
     flex-direction: row;
@@ -903,15 +898,11 @@ select:-webkit-autofill:focus {
         gap: 0.25rem;
     }
 
-    .admin-auto-backup-note {
-        text-align: left;
-        white-space: normal;
-    }
 }
 
 .lede-email {
     color: var(--muted);
-    font-size: 0.95em;
+    font-size: 1.1em;
     font-weight: 400;
 }
 
