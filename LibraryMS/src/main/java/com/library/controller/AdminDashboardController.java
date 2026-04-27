@@ -39,13 +39,7 @@ public class AdminDashboardController {
             AdminMaintenanceService.MaintenanceResult result = adminMaintenanceService.backupAndCleanup();
             redirectAttributes.addFlashAttribute(
                     "flashSuccess",
-                    "Maintenance complete. Backup updated at: "
-                            + result.backupPath()
-                            + ". Removed "
-                            + result.deletedTempFiles()
-                            + " temporary files and reclaimed "
-                            + result.freedBytes()
-                            + " bytes of storage.");
+                    "Maintenance Complete. Backup Done !!! Removed temporary files and reclaimed Storage");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
         }
@@ -58,9 +52,7 @@ public class AdminDashboardController {
             AdminMaintenanceService.RestoreResult result = adminMaintenanceService.restoreFromLatestBackup();
             redirectAttributes.addFlashAttribute(
                     "flashSuccess",
-                    "Restore complete from backup file: "
-                            + result.backupPath()
-                            + ". Current database now matches this backup snapshot.");
+                    "Restore complete from backup file Sucessfully!!!.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
         }

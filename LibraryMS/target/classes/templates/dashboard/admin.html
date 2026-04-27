@@ -26,8 +26,7 @@
                         <form class="inline-action"
                               th:action="@{/admin/maintenance/restore}"
                               method="post"
-                              onsubmit="return confirm('Restore backup now? This will overwrite current database data with the backup snapshot.');">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                              onsubmit="return confirm('Restore backup now? This will overwrite current data with the last backup data. You may lose data if you don\'t have the latest backup data. Are you sure you want to proceed?');"                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <button type="submit" class="btn btn-restore">
                                 Restore Backup
                             </button>

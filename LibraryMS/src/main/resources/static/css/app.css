@@ -852,13 +852,13 @@ select:-webkit-autofill:focus {
 .admin-maintenance-actions {
     display: flex;
     flex-direction: row;
-    gap: 4.35rem;
+    gap: 4rem;
     align-items: flex-end;
 }
 
 /* Move restore button slightly left. */
 .admin-maintenance-actions .inline-action:last-child {
-    margin-right: 2.8rem;
+    margin-right: 2.9rem;
 }
 
 .btn-maintenance,
