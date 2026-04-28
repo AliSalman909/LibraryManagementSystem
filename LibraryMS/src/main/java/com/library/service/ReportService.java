@@ -58,8 +58,14 @@ public class ReportService {
         long paid = fineRepository.countByStatus(FineStatus.PAID);
         long waived = fineRepository.countByStatus(FineStatus.WAIVED);
         BigDecimal unpaidIssuedAmount = fineRepository.sumAmountByStatus(FineStatus.UNPAID);
-        BigDecimal paidAmount = fineRepository.sumAmountByStatus(FineStatus.PAID);
-        BigDecimal waivedAmount = fineRepository.sumAmountByStatus(FineStatus.WAIVED);
+        BigDecimal paidGrossAmount = fineRepository.sumAmountByStatus(FineStatus.PAID);
+        BigDecimal waivedGrossAmount = fineRepository.sumAmountByStatus(FineStatus.WAIVED);
+        BigDecimal paidNetAmount = nonNegative(paidGrossAmount.subtract(fineRepository.sumWaivedAmountByStatus(FineStatus.PAID)));
+        BigDecimal paidWaivedAdjustment = fineRepository.sumWaivedAmountByStatus(FineStatus.PAID);
+        BigDecimal waivedNetAmount = nonNegative(waivedGrossAmount.subtract(fineRepository.sumWaivedAmountByStatus(FineStatus.WAIVED)));
+        BigDecimal waivedAdjustmentAmount = fineRepository.sumWaivedAmountByStatus(FineStatus.WAIVED);
+        BigDecimal paidAmount = paidNetAmount;
+        BigDecimal waivedAmount = paidWaivedAdjustment.add(waivedAdjustmentAmount);
 
         List<BorrowRecord> liveOverdue = borrowRecordRepository.findAllOverdueWithDetails(LocalDate.now());
         long unpaidNotIssued = liveOverdue.size();
@@ -82,7 +88,11 @@ public class ReportService {
                 unpaidIssuedAmount,
                 unpaidNotIssuedAmount,
                 paidAmount,
-                waivedAmount);
+                waivedAmount,
+                paidNetAmount,
+                paidWaivedAdjustment,
+                waivedNetAmount,
+                waivedAdjustmentAmount);
     }
 
     // -----------------------------------------------------------------------
@@ -110,7 +120,11 @@ public class ReportService {
             BigDecimal unpaidIssuedAmount,
             BigDecimal unpaidNotIssuedAmount,
             BigDecimal paidAmount,
-            BigDecimal waivedAmount) {
+            BigDecimal waivedAmount,
+            BigDecimal paidNetAmount,
+            BigDecimal paidWaivedAdjustment,
+            BigDecimal waivedNetAmount,
+            BigDecimal waivedAdjustmentAmount) {
 
         public long unpaidTotalCount() {
             return unpaidIssuedCount + unpaidNotIssuedCount;
@@ -133,5 +147,12 @@ public class ReportService {
             long totalUsers, long activeLoans, long completedLoans, long overdueLoans) {
 
         public long totalLoans() { return activeLoans + completedLoans; }
+    }
+
+    private static BigDecimal nonNegative(BigDecimal value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        return value.max(BigDecimal.ZERO);
     }
 }

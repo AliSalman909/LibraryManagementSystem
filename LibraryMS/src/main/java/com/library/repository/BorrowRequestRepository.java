@@ -63,4 +63,6 @@ public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, St
     Optional<BorrowRequest> findByIdWithDetailsForUpdate(@Param("requestId") String requestId);
 
     long deleteByBookBookIdAndStatus(String bookId, BorrowRequestStatus status);
+
+    long deleteByBookBookId(String bookId);
 }

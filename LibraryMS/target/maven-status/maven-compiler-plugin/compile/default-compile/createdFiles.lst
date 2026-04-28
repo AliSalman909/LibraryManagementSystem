@@ -1,4 +1,5 @@
 com\library\security\LibraryUserDetails.class
+com\library\service\AdminMaintenanceService$RestoreResult.class
 com\library\repository\StudentRepository.class
 com\library\security\LibraryAuthenticationProvider$1.class
 com\library\service\ProfilePictureStorageService.class
@@ -10,6 +11,7 @@ com\library\repository\AdminProfileRepository.class
 com\library\exception\BusinessRuleException.class
 com\library\repository\BookRepository.class
 com\library\repository\UserRepository.class
+com\library\service\AdminMaintenanceService$CleanupStats.class
 com\library\controller\StudentBookController.class
 com\library\controller\AuthController.class
 com\library\controller\LibrarianReservationController.class
@@ -17,6 +19,7 @@ com\library\repository\RegistrationRequestRepository.class
 com\library\entity\Student.class
 com\library\security\LibraryLoginFailureHandler.class
 com\library\entity\User.class
+com\library\service\AdminMaintenanceService.class
 com\library\controller\AdminUserAccountsController.class
 com\library\config\SmartPortCustomizer.class
 com\library\dto\BorrowApprovalResponse.class
@@ -55,6 +58,7 @@ com\library\config\BrowserLauncher.class
 com\library\entity\BorrowRequest.class
 com\library\config\WebConfig.class
 com\library\entity\Notification.class
+com\library\dto\StudentUnpaidReceiptRow.class
 com\library\entity\Book.class
 com\library\config\SecurityConfig.class
 com\library\controller\LibrarianBookController.class
@@ -70,7 +74,9 @@ com\library\entity\Fine.class
 com\library\controller\LibrarianDashboardController.class
 com\library\LibraryApplication.class
 com\library\service\UserService.class
+com\library\service\AdminMaintenanceService$MaintenanceResult.class
 com\library\service\ReservationService.class
+com\library\service\BorrowRequestSchemaMigrationService.class
 com\library\controller\StudentReservationController.class
 com\library\entity\enums\UserRole.class
 com\library\repository\BorrowRecordRepository.class

@@ -38,6 +38,7 @@ public class BorrowRequestService {
     private final BookCopyRepository bookCopyRepository;
     private final StudentRepository studentRepository;
     private final LibrarianRepository librarianRepository;
+    private final ReservationService reservationService;
 
     public BorrowRequestService(
             BorrowRequestRepository borrowRequestRepository,
@@ -45,13 +46,15 @@ public class BorrowRequestService {
             BookRepository bookRepository,
             BookCopyRepository bookCopyRepository,
             StudentRepository studentRepository,
-            LibrarianRepository librarianRepository) {
+            LibrarianRepository librarianRepository,
+            ReservationService reservationService) {
         this.borrowRequestRepository = borrowRequestRepository;
         this.borrowRecordRepository = borrowRecordRepository;
         this.bookRepository = bookRepository;
         this.bookCopyRepository = bookCopyRepository;
         this.studentRepository = studentRepository;
         this.librarianRepository = librarianRepository;
+        this.reservationService = reservationService;
     }
 
     @Transactional
@@ -180,7 +183,9 @@ public class BorrowRequestService {
 
         borrowRequestRepository.save(request);
         bookCopyRepository.save(availableCopy);
-        return borrowRecordRepository.save(record);
+        BorrowRecord savedRecord = borrowRecordRepository.save(record);
+        reservationService.reconcileReadyForBookAvailability(book.getBookId());
+        return savedRecord;
     }
 
     @Transactional

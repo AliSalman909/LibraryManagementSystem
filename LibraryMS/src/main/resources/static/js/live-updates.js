@@ -11,54 +11,19 @@
 
     function isEditableElement(el) {
         if (!el) return false;
-        const tag = el.tagName;
-        return (
-            tag === "INPUT" ||
-            tag === "TEXTAREA" ||
-            tag === "SELECT" ||
-            el.isContentEditable
+        return el.matches(
+            "input, textarea, select, button, a, [contenteditable='true'], [tabindex]:not([tabindex='-1'])"
         );
-    }
-
-    function isElementDirty(el) {
-        if (!el || el.disabled || el.readOnly) return false;
-        const tag = el.tagName;
-        const type = (el.type || "").toLowerCase();
-
-        if (tag === "INPUT") {
-            if (type === "checkbox" || type === "radio") {
-                return el.checked !== el.defaultChecked;
-            }
-            if (type === "hidden" || type === "submit" || type === "button") {
-                return false;
-            }
-            return el.value !== el.defaultValue;
-        }
-
-        if (tag === "TEXTAREA") {
-            return el.value !== el.defaultValue;
-        }
-
-        if (tag === "SELECT") {
-            return Array.from(el.options).some((opt) => opt.selected !== opt.defaultSelected);
-        }
-
-        if (el.isContentEditable) {
-            return true;
-        }
-
-        return false;
     }
 
     function hasUnsavedOrActiveInput() {
         const active = document.activeElement;
-        if (isEditableElement(active)) return true;
+        return isEditableElement(active);
+    }
 
-        const editable = document.querySelectorAll("input, textarea, select, [contenteditable='true']");
-        for (const el of editable) {
-            if (isElementDirty(el)) return true;
-        }
-        return false;
+    function hasActiveTextSelection() {
+        const selection = window.getSelection();
+        return Boolean(selection && !selection.isCollapsed && String(selection).trim().length > 0);
     }
 
     function hasRecentVisibleAlert() {
@@ -141,6 +106,7 @@
     async function refreshFragments() {
         if (inFlight || document.hidden || !shouldRunOnThisPage()) return;
         if (hasUnsavedOrActiveInput()) return;
+        if (hasActiveTextSelection()) return;
         if (hasRecentVisibleAlert()) return;
 
         inFlight = true;

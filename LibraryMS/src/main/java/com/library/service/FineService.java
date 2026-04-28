@@ -98,7 +98,13 @@ public class FineService {
             Librarian librarian = resolveLibrarian(librarianUserId);
             fine.setResolvedAt(Instant.now());
             fine.setResolvedBy(librarian);
-            fine.setWaivedAmount(targetStatus == FineStatus.WAIVED ? normalizedWaived : BigDecimal.ZERO);
+            if (targetStatus == FineStatus.WAIVED) {
+                fine.setWaivedAmount(normalizedWaived);
+            } else {
+                // Keep already-applied waived adjustment when marking PAID
+                // so net paid amount stays (total - waived).
+                fine.setWaivedAmount(normalizeWaivedAmount(fine.getWaivedAmount(), fine.getAmount()));
+            }
         }
 
         fine.setNotes((notes != null && !notes.isBlank()) ? notes.strip() : null);

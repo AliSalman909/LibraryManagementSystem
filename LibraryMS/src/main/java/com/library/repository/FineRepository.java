@@ -101,4 +101,18 @@ public interface FineRepository extends JpaRepository<Fine, String> {
     /** Sum of amounts by status (for admin fine collection report). */
     @Query("select coalesce(sum(f.amount), 0) from Fine f where f.status = :status")
     java.math.BigDecimal sumAmountByStatus(@Param("status") FineStatus status);
+
+    /** Sum of waived adjustment by status. */
+    @Query("select coalesce(sum(f.waivedAmount), 0) from Fine f where f.status = :status")
+    java.math.BigDecimal sumWaivedAmountByStatus(@Param("status") FineStatus status);
+
+    /** Sum of net amount (amount - waived) by status. */
+    @Query("""
+            select coalesce(sum(f.amount), 0) - coalesce(sum(coalesce(f.waivedAmount, 0)), 0)
+            from Fine f
+            where f.status = :status
+            """)
+    java.math.BigDecimal sumNetAmountByStatus(@Param("status") FineStatus status);
+
+    long deleteByBorrowRecordBookBookId(String bookId);
 }

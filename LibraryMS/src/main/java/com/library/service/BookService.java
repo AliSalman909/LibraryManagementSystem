@@ -3,11 +3,12 @@ package com.library.service;
 import com.library.dto.BookForm;
 import com.library.entity.Book;
 import com.library.entity.BookCopy;
-import com.library.entity.enums.BorrowRequestStatus;
 import com.library.exception.BusinessRuleException;
 import com.library.repository.BorrowRequestRepository;
+import com.library.repository.BorrowRecordRepository;
 import com.library.repository.BookCopyRepository;
 import com.library.repository.BookRepository;
+import com.library.repository.FineRepository;
 import com.library.repository.ReservationRepository;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ public class BookService {
     private final BookCopyRepository bookCopyRepository;
     private final BorrowRequestRepository borrowRequestRepository;
     private final ReservationRepository reservationRepository;
+    private final BorrowRecordRepository borrowRecordRepository;
+    private final FineRepository fineRepository;
 
     /** Five unambiguous characters shown to librarians. */
     private static final String PLAIN_BOOK_ID_ALPHABET = Book.PLAIN_BOOK_ID_ALPHABET;
@@ -39,11 +42,15 @@ public class BookService {
             BookRepository bookRepository,
             BookCopyRepository bookCopyRepository,
             BorrowRequestRepository borrowRequestRepository,
-            ReservationRepository reservationRepository) {
+            ReservationRepository reservationRepository,
+            BorrowRecordRepository borrowRecordRepository,
+            FineRepository fineRepository) {
         this.bookRepository = bookRepository;
         this.bookCopyRepository = bookCopyRepository;
         this.borrowRequestRepository = borrowRequestRepository;
         this.reservationRepository = reservationRepository;
+        this.borrowRecordRepository = borrowRecordRepository;
+        this.fineRepository = fineRepository;
     }
 
     @PostConstruct
@@ -196,17 +203,19 @@ public class BookService {
                 bookRepository
                         .findByIdForUpdate(bookId)
                         .orElseThrow(() -> new BusinessRuleException("Book not found."));
-        if (book.getAvailableCopies() < book.getTotalCopies()) {
+        if (borrowRecordRepository.existsByBookBookIdAndReturnedAtIsNull(bookId)) {
             throw new BusinessRuleException("Cannot delete a book that is currently borrowed.");
         }
-        // If the title is only requested/reserved (not currently borrowed), clear queue entries first.
-        borrowRequestRepository.deleteByBookBookIdAndStatus(bookId, BorrowRequestStatus.PENDING);
+        // Purge book-linked history when there is no active borrow, so no stale rows remain in tables.
+        fineRepository.deleteByBorrowRecordBookBookId(bookId);
+        borrowRecordRepository.deleteByBookBookId(bookId);
+        borrowRequestRepository.deleteByBookBookId(bookId);
         reservationRepository.deleteByBookBookId(bookId);
         List<BookCopy> copies = bookCopyRepository.findAllCopiesForUpdateOrderByCopyNumberAsc(bookId);
         if (!copies.isEmpty()) {
             bookCopyRepository.deleteAll(copies);
         }
-        bookRepository.delete(book);
+        bookRepository.delete(Objects.requireNonNull(book));
     }
 
     private void syncCopiesForTotal(Book book, int oldTotal, int newTotal) {

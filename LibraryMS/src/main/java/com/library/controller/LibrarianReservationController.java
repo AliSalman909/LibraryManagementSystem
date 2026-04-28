@@ -2,7 +2,9 @@ package com.library.controller;
 
 import com.library.exception.BusinessRuleException;
 import com.library.messages.UserFacingMessages;
+import com.library.security.LibraryUserDetails;
 import com.library.service.ReservationService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,9 +40,10 @@ public class LibrarianReservationController {
     @PostMapping("/librarian/reservations/{id}/fulfill")
     public String fulfill(
             @PathVariable("id") String reservationId,
+            @AuthenticationPrincipal LibraryUserDetails principal,
             RedirectAttributes redirectAttributes) {
         try {
-            reservationService.markFulfilled(reservationId);
+            reservationService.markFulfilled(reservationId, principal.getUserId());
             redirectAttributes.addFlashAttribute("flashSuccess", "Reservation marked as fulfilled.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError",

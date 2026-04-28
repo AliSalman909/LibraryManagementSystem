@@ -20,6 +20,10 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Stri
 
     boolean existsByStudentUserIdAndBookBookIdAndReturnedAtIsNull(String studentUserId, String bookId);
 
+    boolean existsByBookBookIdAndReturnedAtIsNull(String bookId);
+
+    long deleteByBookBookId(String bookId);
+
     /**
      * Fetch all active (not yet returned) loans with their book, copy, student and user
      * in a single query to avoid N+1 on the librarian active-loans page.

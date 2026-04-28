@@ -10,14 +10,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.library.entity.Book;
+import com.library.entity.BookCopy;
+import com.library.entity.BorrowRecord;
+import com.library.entity.BorrowRequest;
+import com.library.entity.Librarian;
 import com.library.entity.Reservation;
 import com.library.entity.Student;
+import com.library.entity.enums.BorrowRequestStatus;
 import com.library.entity.enums.ReservationStatus;
 import com.library.exception.BusinessRuleException;
+import com.library.repository.BookCopyRepository;
 import com.library.repository.BookRepository;
+import com.library.repository.BorrowRequestRepository;
 import com.library.repository.BorrowRecordRepository;
+import com.library.repository.LibrarianRepository;
 import com.library.repository.ReservationRepository;
 import com.library.repository.StudentRepository;
+import java.time.LocalDate;
 
 /**
  * Manages the book reservation / waitlist system.
@@ -40,16 +49,25 @@ public class ReservationService {
     private final BookRepository bookRepository;
     private final StudentRepository studentRepository;
     private final BorrowRecordRepository borrowRecordRepository;
+    private final BookCopyRepository bookCopyRepository;
+    private final BorrowRequestRepository borrowRequestRepository;
+    private final LibrarianRepository librarianRepository;
 
     public ReservationService(
             ReservationRepository reservationRepository,
             BookRepository bookRepository,
             StudentRepository studentRepository,
-            BorrowRecordRepository borrowRecordRepository) {
+            BorrowRecordRepository borrowRecordRepository,
+            BookCopyRepository bookCopyRepository,
+            BorrowRequestRepository borrowRequestRepository,
+            LibrarianRepository librarianRepository) {
         this.reservationRepository = reservationRepository;
         this.bookRepository = bookRepository;
         this.studentRepository = studentRepository;
         this.borrowRecordRepository = borrowRecordRepository;
+        this.bookCopyRepository = bookCopyRepository;
+        this.borrowRequestRepository = borrowRequestRepository;
+        this.librarianRepository = librarianRepository;
     }
 
     // -----------------------------------------------------------------------
@@ -127,16 +145,7 @@ public class ReservationService {
      */
     @Transactional
     public void notifyNextInQueue(String bookId) {
-        List<Reservation> pending = reservationRepository.findPendingByBookOrderByPosition(bookId);
-        if (pending.isEmpty()) {
-            return;
-        }
-        Reservation next = pending.get(0);
-        Instant now = Instant.now();
-        next.setStatus(ReservationStatus.READY);
-        next.setNotifiedAt(now);
-        next.setExpiresAt(now.plus(pickupWindowHours, ChronoUnit.HOURS));
-        reservationRepository.save(next);
+        reconcileReadyForBookAvailability(bookId);
     }
 
     /**
@@ -175,20 +184,68 @@ public class ReservationService {
     // -----------------------------------------------------------------------
 
     @Transactional
-    public void markFulfilled(String reservationId) {
+    public void markFulfilled(String reservationId, String librarianUserId) {
         @SuppressWarnings("null")
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found."));
         if (reservation.getStatus() != ReservationStatus.READY) {
             throw new BusinessRuleException("Only READY reservations can be marked as fulfilled.");
         }
+        if (borrowRecordRepository.existsByStudentUserIdAndBookBookIdAndReturnedAtIsNull(
+                reservation.getStudent().getUserId(), reservation.getBook().getBookId())) {
+            throw new BusinessRuleException("This student already has an active loan for this book.");
+        }
+        Librarian librarian = librarianRepository.findByUserIdWithUser(librarianUserId)
+                .orElseThrow(() -> new BusinessRuleException("Librarian account not found."));
         // Guard grant action: reservation can only be fulfilled if inventory still has a free copy.
         int updated = bookRepository.decrementAvailableCopiesIfAvailable(
                 reservation.getBook().getBookId(), Instant.now());
         if (updated == 0) {
+            // Inventory changed before this action (e.g., copy was loaned/allocated elsewhere).
+            // Move back to queue so reservation is not left in READY while unavailable.
+            reservation.setStatus(ReservationStatus.PENDING);
+            reservation.setNotifiedAt(null);
+            reservation.setExpiresAt(null);
+            reservationRepository.save(reservation);
             throw new BusinessRuleException(
-                    "This reservation cannot be granted yet because no copy is currently available.");
+                    "This book is currently on loan, so the reservation was moved back to pending.");
         }
+        List<BookCopy> lockedAvailableCopies =
+                bookCopyRepository.findAvailableCopiesForUpdateOrderByCopyNumberAsc(reservation.getBook().getBookId());
+        BookCopy availableCopy = lockedAvailableCopies.stream()
+                .findFirst()
+                .orElseThrow(() -> new BusinessRuleException("No available copy found for this book."));
+        availableCopy.setAvailable(false);
+        bookCopyRepository.save(availableCopy);
+
+        int maxBorrowDays = reservation.getBook().getMaxBorrowDays();
+        int requestedDays = reservation.getRequestedDurationDays();
+        int durationDays = requestedDays > 0 ? Math.min(requestedDays, maxBorrowDays) : Math.min(DEFAULT_DURATION_DAYS, maxBorrowDays);
+        LocalDate dueDate = LocalDate.now().plusDays(durationDays);
+
+        BorrowRequest autoRequest = new BorrowRequest();
+        autoRequest.setRequestId(UUID.randomUUID().toString());
+        autoRequest.setBook(reservation.getBook());
+        autoRequest.setStudent(reservation.getStudent());
+        autoRequest.setStatus(BorrowRequestStatus.APPROVED);
+        autoRequest.setRequestedAt(reservation.getCreatedAt() != null ? reservation.getCreatedAt() : Instant.now());
+        autoRequest.setReviewedAt(Instant.now());
+        autoRequest.setDueDate(dueDate);
+        autoRequest.setRequestedDurationDays(durationDays);
+        autoRequest.setProcessedBy(librarian);
+        borrowRequestRepository.save(autoRequest);
+
+        BorrowRecord record = new BorrowRecord();
+        record.setRecordId(UUID.randomUUID().toString());
+        record.setBorrowRequest(autoRequest);
+        record.setBook(reservation.getBook());
+        record.setCopy(availableCopy);
+        record.setStudent(reservation.getStudent());
+        record.setIssuedBy(librarian);
+        record.setIssuedAt(Instant.now());
+        record.setDueDate(dueDate);
+        borrowRecordRepository.save(record);
+
         reservation.setStatus(ReservationStatus.FULFILLED);
         reservation.setFulfilledAt(Instant.now());
         reservationRepository.save(reservation);
@@ -227,18 +284,21 @@ public class ReservationService {
     // Read queries
     // -----------------------------------------------------------------------
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Reservation> listForStudent(String studentUserId) {
+        reconcileAllActiveReservationBooks();
         return reservationRepository.findAllByStudentWithBook(studentUserId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Reservation> listAll() {
+        reconcileAllActiveReservationBooks();
         return reservationRepository.findAllWithDetails();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Reservation> listReady() {
+        reconcileAllActiveReservationBooks();
         return reservationRepository.findAllReadyWithDetails();
     }
 
@@ -248,6 +308,44 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public boolean hasActiveReservationsForBook(String bookId) {
         return reservationRepository.countByBookAndStatusIn(bookId, ACTIVE_STATUSES) > 0;
+    }
+
+    @Transactional
+    public void reconcileReadyForBookAvailability(String bookId) {
+        Book book = bookRepository.findByIdForUpdate(bookId)
+                .orElseThrow(() -> new BusinessRuleException("Book not found."));
+        List<Reservation> readyReservations = reservationRepository.findReadyByBookForUpdate(bookId);
+        if (book.getAvailableCopies() <= 0) {
+            if (!readyReservations.isEmpty()) {
+                for (Reservation reservation : readyReservations) {
+                    reservation.setStatus(ReservationStatus.PENDING);
+                    reservation.setNotifiedAt(null);
+                    reservation.setExpiresAt(null);
+                }
+                reservationRepository.saveAll(readyReservations);
+            }
+            return;
+        }
+        if (!readyReservations.isEmpty()) {
+            return;
+        }
+        List<Reservation> pending = reservationRepository.findPendingByBookOrderByPosition(bookId);
+        if (pending.isEmpty()) {
+            return;
+        }
+        Reservation next = pending.get(0);
+        Instant now = Instant.now();
+        next.setStatus(ReservationStatus.READY);
+        next.setNotifiedAt(now);
+        next.setExpiresAt(now.plus(pickupWindowHours, ChronoUnit.HOURS));
+        reservationRepository.save(next);
+    }
+
+    private void reconcileAllActiveReservationBooks() {
+        List<String> bookIds = reservationRepository.findBookIdsWithActiveReservations();
+        for (String bookId : bookIds) {
+            reconcileReadyForBookAvailability(bookId);
+        }
     }
 
     private int normalizeRequestedDuration(Integer durationDays, int maxBorrowDays) {

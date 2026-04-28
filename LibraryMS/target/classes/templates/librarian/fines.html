@@ -44,6 +44,14 @@
                         <div th:each="fine : ${row.fines}" class="fine-receipt-line" style="margin-bottom:0.65rem;padding-bottom:0.65rem;border-bottom:1px solid #e5e7eb;">
                             <div th:text="${fine.borrowRecord.book.title}">Book</div>
                             <div class="muted-note" th:text="${fine.borrowRecord.book.bookId}">BK</div>
+                            <div class="muted-note"
+                                 th:text="'Fine: ' + ${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">
+                                Fine: 0.00 PKR
+                            </div>
+                            <div class="muted-note"
+                                 th:text="'Net: ' + ${#numbers.formatDecimal(fine.netAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">
+                                Net: 0.00 PKR
+                            </div>
                         </div>
                     </td>
                     <td th:text="${#numbers.formatDecimal(row.totalAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
@@ -135,6 +143,8 @@
                     <th>Student</th>
                     <th>Book</th>
                     <th>Total Fine</th>
+                    <th>Waived Adjustment</th>
+                    <th>Net Fine</th>
                     <th>Status</th>
                     <th>Notes</th>
                     <th>Update</th>
@@ -142,12 +152,14 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(fines)}">
-                    <td colspan="6" class="empty-state">No fines found for this filter.</td>
+                    <td colspan="8" class="empty-state">No fines found for this filter.</td>
                 </tr>
                 <tr th:each="fine : ${fines}">
                     <td th:text="${fine.student.user.fullName + ' (' + fine.student.userId + ')'}">Student</td>
                     <td th:text="${fine.borrowRecord.book.title}">Book</td>
                     <td th:text="${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
+                    <td th:text="${#numbers.formatDecimal(fine.waivedAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
+                    <td th:text="${#numbers.formatDecimal(fine.netAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
                     <td>
                         <span th:switch="${fine.status.name()}">
                             <span th:case="'UNPAID'" class="status-pill status-pill--overdue">Unpaid</span>

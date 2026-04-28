@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class ReturnService {
+    private static final int MAX_ACTIVE_LOANS = 3;
 
     private final BorrowRecordRepository borrowRecordRepository;
     private final BookRepository bookRepository;
@@ -177,6 +178,10 @@ public class ReturnService {
         if (copyBlock != null) {
             throw new BusinessRuleException(copyBlock);
         }
+        String loanLimitBlock = activeLoanLimitUndoMessage(record);
+        if (loanLimitBlock != null) {
+            throw new BusinessRuleException(loanLimitBlock);
+        }
 
         Instant returnedAt = record.getReturnedAt();
         if (reservationService.hasUndoBlockingReadyReservation(record.getBook().getBookId(), returnedAt)) {
@@ -232,6 +237,10 @@ public class ReturnService {
         if (copyBlock != null) {
             return copyBlock;
         }
+        String loanLimitBlock = activeLoanLimitUndoMessage(returnedLoan);
+        if (loanLimitBlock != null) {
+            return loanLimitBlock;
+        }
         if (reservationService.hasUndoBlockingReadyReservation(
                 returnedLoan.getBook().getBookId(), returnedLoan.getReturnedAt())) {
             return "Undo locked: another student already has this book ready for pickup from an earlier return.";
@@ -250,7 +259,6 @@ public class ReturnService {
         if (returnedLoan.getCopy().isAvailable()) {
             return null;
         }
-        String inst = instanceLabel(returnedLoan);
         Optional<BorrowRecord> newer =
                 borrowRecordRepository.findActiveByCopyCopyId(returnedLoan.getCopy().getCopyId());
         if (newer.isPresent()) {
@@ -259,22 +267,24 @@ public class ReturnService {
                     .getUserId()
                     .equals(returnedLoan.getStudent().getUserId());
             if (sameStudent) {
-                return "Undo locked: this copy (" + inst + ") is out again on a newer loan to the same student. "
+                return "Undo locked: this copy is out again on a newer loan to the same student. "
                         + "Return that newer loan first if you need to reverse this return.";
             }
-            return "Undo locked: this copy (" + inst + ") was checked out again by another patron after the return.";
+            return "Undo locked: this copy was checked out again by another patron after the return.";
         }
-        return "Undo locked: this copy (" + inst + ") is not marked available (no active loan found — check copy data).";
+        return "Undo locked: this copy is not marked available (no active loan found — check copy data).";
     }
 
-    private static String instanceLabel(BorrowRecord returnedLoan) {
-        if (returnedLoan.getCopy() == null) {
-            return "—";
+    private String activeLoanLimitUndoMessage(BorrowRecord returnedLoan) {
+        String studentUserId = returnedLoan.getStudent().getUserId();
+        long activeLoans = borrowRecordRepository.countByStudentUserIdAndReturnedAtIsNull(studentUserId);
+        if (activeLoans >= MAX_ACTIVE_LOANS) {
+            return "Undo locked: student already has "
+                    + activeLoans
+                    + " active loans (maximum allowed is "
+                    + MAX_ACTIVE_LOANS
+                    + ").";
         }
-        String isbn = returnedLoan.getCopy().getIsbnCode();
-        if (isbn != null && !isbn.isBlank()) {
-            return returnedLoan.getCopy().getCopyId() + " / " + isbn;
-        }
-        return returnedLoan.getCopy().getCopyId();
+        return null;
     }
 }

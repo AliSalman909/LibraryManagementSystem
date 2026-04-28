@@ -144,5 +144,38 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
             @Param("fromInclusive") Instant fromInclusive,
             @Param("toInclusive") Instant toInclusive);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+            order by r.queuePosition asc
+            """)
+    List<Reservation> findReadyByBookForUpdate(@Param("bookId") String bookId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.status = 'READY'
+              and b.availableCopies <= 0
+            order by r.createdAt asc
+            """)
+    List<Reservation> findReadyWithUnavailableBookForUpdate();
+
+    @Query("""
+            select count(r) from Reservation r
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+            """)
+    long countReadyByBookId(@Param("bookId") String bookId);
+
+    @Query("""
+            select distinct r.book.bookId from Reservation r
+            where r.status in ('PENDING', 'READY')
+            """)
+    List<String> findBookIdsWithActiveReservations();
+
     long deleteByBookBookId(String bookId);
 }

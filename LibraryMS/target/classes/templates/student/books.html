@@ -116,14 +116,19 @@
             if (!active) {
                 return false;
             }
-            if (active.matches('input, textarea, select, button, [contenteditable="true"]')) {
+            if (active.matches('input, textarea, select, button, a, [contenteditable="true"], [tabindex]:not([tabindex="-1"])')) {
                 return true;
             }
             return false;
         };
 
+        const hasActiveTextSelection = function () {
+            const selection = window.getSelection();
+            return Boolean(selection && !selection.isCollapsed && String(selection).trim().length > 0);
+        };
+
         const refreshRows = function () {
-            if (document.hidden || hasActiveInteractiveElement()) {
+            if (document.hidden || hasActiveInteractiveElement() || hasActiveTextSelection()) {
                 return;
             }
             fetch(window.location.pathname, {
