@@ -185,7 +185,7 @@ CREATE TABLE `borrow_requests` (
   CONSTRAINT `fk_borrow_requests_book` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_borrow_requests_processed_by_librarian` FOREIGN KEY (`processed_by_librarian_id`) REFERENCES `librarians` (`user_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_borrow_requests_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `chk_borrow_requests_duration` CHECK ((`requested_duration_days` in (7,14)))
+  CONSTRAINT `chk_borrow_requests_duration` CHECK ((`requested_duration_days` in (7,14,21,28)))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

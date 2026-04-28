@@ -79,6 +79,7 @@ C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\service\AdminMaintenanceService.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\service\AdminUserAccountService.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\service\BookService.java
+C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\service\BorrowRequestSchemaMigrationService.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\service\BorrowRequestService.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\service\FineService.java
 C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS\src\main\java\com\library\service\ProfilePictureStorageService.java

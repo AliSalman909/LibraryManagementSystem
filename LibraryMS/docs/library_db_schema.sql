@@ -193,7 +193,7 @@ CREATE TABLE borrow_requests (
   CONSTRAINT fk_borrow_requests_book                    FOREIGN KEY (book_id) REFERENCES books (book_id) ON DELETE CASCADE,
   CONSTRAINT fk_borrow_requests_student                 FOREIGN KEY (student_id) REFERENCES students (user_id) ON DELETE CASCADE,
   CONSTRAINT fk_borrow_requests_processed_by_librarian  FOREIGN KEY (processed_by_librarian_id) REFERENCES librarians (user_id) ON DELETE SET NULL,
-  CONSTRAINT chk_borrow_requests_duration               CHECK (requested_duration_days IN (7, 14))
+  CONSTRAINT chk_borrow_requests_duration               CHECK (requested_duration_days IN (7, 14, 21, 28))
 );
 
 CREATE INDEX idx_borrow_requests_student_status ON borrow_requests (student_id, status);
