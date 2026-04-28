@@ -10,8 +10,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "borrow_requests")
@@ -119,5 +121,20 @@ public class BorrowRequest {
 
     public void setRequestedDurationDays(int requestedDurationDays) {
         this.requestedDurationDays = requestedDurationDays;
+    }
+
+    @Transient
+    public LocalDate getRequestExpiresOn() {
+        if (requestedAt == null) {
+            return null;
+        }
+        return requestedAt.atZone(ZoneId.systemDefault()).toLocalDate().plusDays(requestedDurationDays);
+    }
+
+    @Transient
+    public boolean isPendingExpired() {
+        return status == BorrowRequestStatus.PENDING
+                && getRequestExpiresOn() != null
+                && LocalDate.now().isAfter(getRequestExpiresOn());
     }
 }

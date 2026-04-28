@@ -47,7 +47,8 @@
                     </td>
                     <td data-label="Requested duration" th:text="${request.requestedDurationDays + ' days'}">14 days</td>
                     <td data-label="Requested at" th:text="${#temporals.format(request.requestedAt, 'yyyy-MM-dd HH:mm')}">2026-01-01</td>
-                    <td data-label="Due date" th:text="${request.dueDate != null ? request.dueDate : '—'}">—</td>
+                    <td data-label="Due date"
+                        th:text="${request.status.name() == 'PENDING' ? request.requestExpiresOn : (request.dueDate != null ? request.dueDate : '—')}">—</td>
                     <td data-label="Overdue" th:with="overdue=${request.dueDate != null and request.status.name() == 'APPROVED' and request.dueDate.isBefore(T(java.time.LocalDate).now())}">
                         <span th:if="${overdue}" class="status-pill status-pill--overdue">Overdue</span>
                         <span th:if="${!overdue}" class="muted-note">—</span>

@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ import com.library.repository.StudentRepository;
 
 @Service
 public class BorrowRequestService {
+    private static final Logger log = LoggerFactory.getLogger(BorrowRequestService.class);
     private static final int MAX_ACTIVE_UNIQUE_BOOKS = 3;
     private static final int DEFAULT_LOAN_DAYS = 14;
 
@@ -62,6 +66,7 @@ public class BorrowRequestService {
 
     @Transactional
     public BorrowRequest createPendingRequest(String studentUserId, String bookId, Integer durationDays) {
+        expireExpiredPendingRequests();
         Student student = studentRepository.findByUserIdWithUserForUpdate(studentUserId)
                 .orElseThrow(() -> new BusinessRuleException("Student account not found."));
         if (!student.isCanBorrow()) {
@@ -108,13 +113,15 @@ public class BorrowRequestService {
         return borrowRequestRepository.save(request);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<BorrowRequest> listPendingForLibrarian() {
+        expireExpiredPendingRequests();
         return borrowRequestRepository.findAllByStatusWithDetails(BorrowRequestStatus.PENDING);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<BorrowRequest> listForStudent(String studentUserId) {
+        expireExpiredPendingRequests();
         return borrowRequestRepository.findAllByStudentUserIdWithBook(studentUserId);
     }
 
@@ -122,6 +129,9 @@ public class BorrowRequestService {
     public BorrowRecord approve(String requestId, String librarianUserId, LocalDate dueDate) {
         BorrowRequest request = borrowRequestRepository.findByIdWithDetailsForUpdate(requestId)
                 .orElseThrow(() -> new BusinessRuleException("Borrow request not found."));
+        if (expireRequestIfNeeded(request, Instant.now())) {
+            throw new BusinessRuleException("This borrow request expired before approval and was automatically rejected.");
+        }
         if (request.getStatus() != BorrowRequestStatus.PENDING) {
             throw new BusinessRuleException("Only pending requests can be approved.");
         }
@@ -129,8 +139,10 @@ public class BorrowRequestService {
             throw new BusinessRuleException("This request has already been approved.");
         }
 
-        Integer requestedDuration = request.getRequestedDurationDays() > 0 ? request.getRequestedDurationDays() : DEFAULT_LOAN_DAYS;
-        LocalDate finalDueDate = resolveDueDate(dueDate, requestedDuration);
+        Integer requestedDuration = request.getRequestedDurationDays() > 0
+                ? request.getRequestedDurationDays()
+                : DEFAULT_LOAN_DAYS;
+        LocalDate finalDueDate = resolveDueDate(null, requestedDuration);
 
         Librarian librarian = librarianRepository.findByUserIdWithUser(librarianUserId)
                 .orElseThrow(() -> new BusinessRuleException("Librarian account not found."));
@@ -177,8 +189,7 @@ public class BorrowRequestService {
             String librarianUserId,
             LocalDate dueDate,
             Integer durationDays) {
-        LocalDate finalDueDate = resolveDueDate(dueDate, durationDays);
-        return approve(requestId, librarianUserId, finalDueDate);
+        return approve(requestId, librarianUserId, null);
     }
 
     @Transactional
@@ -196,6 +207,15 @@ public class BorrowRequestService {
         request.setReviewedAt(Instant.now());
         request.setProcessedBy(librarian);
         borrowRequestRepository.save(request);
+    }
+
+    @Scheduled(fixedDelayString = "${app.borrow-request-expiry-check-ms:60000}")
+    @Transactional
+    public void expirePendingRequestsOnSchedule() {
+        int expired = expireExpiredPendingRequests();
+        if (expired > 0) {
+            log.info("Auto-rejected {} expired borrow request(s).", expired);
+        }
     }
 
     /**
@@ -252,5 +272,34 @@ public class BorrowRequestService {
 
     private boolean isSupportedDuration(int days) {
         return days == 7 || days == 14 || days == 21 || days == 28;
+    }
+
+    @Transactional
+    public int expireExpiredPendingRequests() {
+        List<BorrowRequest> pendingRequests = borrowRequestRepository.findAllByStatusWithDetails(BorrowRequestStatus.PENDING);
+        Instant now = Instant.now();
+        int expired = 0;
+        for (BorrowRequest pendingRequest : pendingRequests) {
+            if (expireRequestIfNeeded(pendingRequest, now)) {
+                expired++;
+            }
+        }
+        return expired;
+    }
+
+    private boolean expireRequestIfNeeded(BorrowRequest request, Instant reviewedAt) {
+        if (request.getStatus() != BorrowRequestStatus.PENDING) {
+            return false;
+        }
+        LocalDate expiresOn = request.getRequestExpiresOn();
+        if (expiresOn == null || !LocalDate.now().isAfter(expiresOn)) {
+            return false;
+        }
+        request.setStatus(BorrowRequestStatus.REJECTED);
+        request.setReviewedAt(reviewedAt);
+        request.setProcessedBy(null);
+        request.setDueDate(null);
+        borrowRequestRepository.save(request);
+        return true;
     }
 }

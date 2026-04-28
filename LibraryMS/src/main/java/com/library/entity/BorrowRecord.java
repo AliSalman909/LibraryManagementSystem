@@ -60,6 +60,16 @@ public class BorrowRecord {
     @Column(name = "last_renewed_at")
     private Instant lastRenewedAt;
 
+    /** Pending renewal-request flag required by the current DB schema. */
+    @Column(name = "renew_request_pending", nullable = false)
+    private boolean renewRequestPending = false;
+
+    @Column(name = "renew_requested_at")
+    private Instant renewRequestedAt;
+
+    @Column(name = "renew_requested_days")
+    private Integer renewRequestedDays;
+
     public String getRecordId() {
         return recordId;
     }
@@ -154,5 +164,29 @@ public class BorrowRecord {
 
     public void setLastRenewedAt(Instant lastRenewedAt) {
         this.lastRenewedAt = lastRenewedAt;
+    }
+
+    public boolean isRenewRequestPending() {
+        return renewRequestPending;
+    }
+
+    public void setRenewRequestPending(boolean renewRequestPending) {
+        this.renewRequestPending = renewRequestPending;
+    }
+
+    public Instant getRenewRequestedAt() {
+        return renewRequestedAt;
+    }
+
+    public void setRenewRequestedAt(Instant renewRequestedAt) {
+        this.renewRequestedAt = renewRequestedAt;
+    }
+
+    public Integer getRenewRequestedDays() {
+        return renewRequestedDays;
+    }
+
+    public void setRenewRequestedDays(Integer renewRequestedDays) {
+        this.renewRequestedDays = renewRequestedDays;
     }
 }

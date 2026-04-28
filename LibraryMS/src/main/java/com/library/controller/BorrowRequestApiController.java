@@ -60,15 +60,14 @@ public class BorrowRequestApiController {
             @PathVariable("id") String requestId,
             @RequestBody(required = false) BorrowDecisionRequest request,
             @AuthenticationPrincipal LibraryUserDetails principal) {
-        BorrowDecisionRequest decision = request != null ? request : new BorrowDecisionRequest();
         BorrowRecord record = borrowRequestService.approveWithDuration(
                 requestId,
                 principal.getUserId(),
-                decision.getDueDate(),
-                decision.getDurationDays());
+                null,
+                null);
         BorrowApprovalResponse response = new BorrowApprovalResponse();
-        response.setRequestId(record.getBorrowRequest().getRequestId());
-        response.setStatus(record.getBorrowRequest().getStatus().name());
+        response.setRequestId(requestId);
+        response.setStatus("APPROVED");
         response.setBorrowRecordId(record.getRecordId());
         response.setDueDate(record.getDueDate());
         response.setOverdue(record.getReturnedAt() == null && LocalDate.now().isAfter(record.getDueDate()));
