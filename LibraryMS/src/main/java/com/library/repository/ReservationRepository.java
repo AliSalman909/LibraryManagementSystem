@@ -143,4 +143,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
             @Param("bookId") String bookId,
             @Param("fromInclusive") Instant fromInclusive,
             @Param("toInclusive") Instant toInclusive);
+
+    long deleteByBookBookId(String bookId);
 }

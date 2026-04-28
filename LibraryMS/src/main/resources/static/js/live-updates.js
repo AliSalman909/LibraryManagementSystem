@@ -1,10 +1,11 @@
 (() => {
-    const DEFAULT_POLL_MS = 5000;
-    const REPORTS_POLL_MS = 2000;
-    const STUDENT_REQUESTS_POLL_MS = 2000;
-    const STUDENT_FINES_POLL_MS = 2000;
-    const STUDENT_RESERVATIONS_POLL_MS = 2000;
-    const LIBRARIAN_RESERVATIONS_POLL_MS = 2000;
+    const DEFAULT_POLL_MS = 1000;
+    const REPORTS_POLL_MS = 1000;
+    const STUDENT_REQUESTS_POLL_MS = 1000;
+    const STUDENT_FINES_POLL_MS = 1000;
+    const STUDENT_RESERVATIONS_POLL_MS = 1000;
+    const LIBRARIAN_RESERVATIONS_POLL_MS = 1000;
+    const ALERT_MIN_VISIBLE_MS = 5000;
     let inFlight = false;
     const TABLE_WRAP_SELECTOR = ".table-wrap";
 
@@ -60,10 +61,30 @@
         return false;
     }
 
+    function hasRecentVisibleAlert() {
+        const alerts = document.querySelectorAll(".alert");
+        const now = Date.now();
+        for (const alertEl of alerts) {
+            if (!(alertEl instanceof HTMLElement)) {
+                continue;
+            }
+            if (alertEl.getAttribute("aria-hidden") === "true" || alertEl.style.display === "none") {
+                continue;
+            }
+            const createdAtRaw = alertEl.getAttribute("data-alert-created-at");
+            const createdAt = createdAtRaw ? Number(createdAtRaw) : NaN;
+            if (Number.isFinite(createdAt) && now - createdAt < ALERT_MIN_VISIBLE_MS) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function shouldRunOnThisPage() {
         const path = window.location.pathname || "";
         // Avoid interrupting auth forms unless user left them idle with no edits.
-        return !path.startsWith("/error");
+        // Student books has its own targeted table refresh logic.
+        return !path.startsWith("/error") && path !== "/student/books";
     }
 
     function pollIntervalForPath() {
@@ -120,6 +141,7 @@
     async function refreshFragments() {
         if (inFlight || document.hidden || !shouldRunOnThisPage()) return;
         if (hasUnsavedOrActiveInput()) return;
+        if (hasRecentVisibleAlert()) return;
 
         inFlight = true;
         try {

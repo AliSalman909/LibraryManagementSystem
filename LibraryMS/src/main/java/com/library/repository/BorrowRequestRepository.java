@@ -61,4 +61,6 @@ public interface BorrowRequestRepository extends JpaRepository<BorrowRequest, St
             where br.requestId = :requestId
             """)
     Optional<BorrowRequest> findByIdWithDetailsForUpdate(@Param("requestId") String requestId);
+
+    long deleteByBookBookIdAndStatus(String bookId, BorrowRequestStatus status);
 }

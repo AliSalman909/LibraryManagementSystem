@@ -3,9 +3,12 @@ package com.library.service;
 import com.library.dto.BookForm;
 import com.library.entity.Book;
 import com.library.entity.BookCopy;
+import com.library.entity.enums.BorrowRequestStatus;
 import com.library.exception.BusinessRuleException;
+import com.library.repository.BorrowRequestRepository;
 import com.library.repository.BookCopyRepository;
 import com.library.repository.BookRepository;
+import com.library.repository.ReservationRepository;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,6 +26,8 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final BookCopyRepository bookCopyRepository;
+    private final BorrowRequestRepository borrowRequestRepository;
+    private final ReservationRepository reservationRepository;
 
     /** Five unambiguous characters shown to librarians. */
     private static final String PLAIN_BOOK_ID_ALPHABET = Book.PLAIN_BOOK_ID_ALPHABET;
@@ -30,9 +35,15 @@ public class BookService {
     private static final int DEFAULT_FINE_PER_DAY_PKR = 50;
     private static final int DEFAULT_MAX_BORROW_DAYS = 28;
 
-    public BookService(BookRepository bookRepository, BookCopyRepository bookCopyRepository) {
+    public BookService(
+            BookRepository bookRepository,
+            BookCopyRepository bookCopyRepository,
+            BorrowRequestRepository borrowRequestRepository,
+            ReservationRepository reservationRepository) {
         this.bookRepository = bookRepository;
         this.bookCopyRepository = bookCopyRepository;
+        this.borrowRequestRepository = borrowRequestRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     @PostConstruct
@@ -188,6 +199,9 @@ public class BookService {
         if (book.getAvailableCopies() < book.getTotalCopies()) {
             throw new BusinessRuleException("Cannot delete a book that is currently borrowed.");
         }
+        // If the title is only requested/reserved (not currently borrowed), clear queue entries first.
+        borrowRequestRepository.deleteByBookBookIdAndStatus(bookId, BorrowRequestStatus.PENDING);
+        reservationRepository.deleteByBookBookId(bookId);
         List<BookCopy> copies = bookCopyRepository.findAllCopiesForUpdateOrderByCopyNumberAsc(bookId);
         if (!copies.isEmpty()) {
             bookCopyRepository.deleteAll(copies);

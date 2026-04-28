@@ -113,7 +113,9 @@ public class LibrarianBookController {
     public String delete(@PathVariable String bookId, RedirectAttributes redirectAttributes) {
         try {
             bookService.delete(bookId);
-            redirectAttributes.addFlashAttribute("flashSuccess", "Book deleted successfully.");
+            redirectAttributes.addFlashAttribute(
+                    "flashSuccess",
+                    "Book deleted successfully. Pending requests and reservations for this book were also removed.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError", UserFacingMessages.orGeneric(ex.getMessage()));
         }

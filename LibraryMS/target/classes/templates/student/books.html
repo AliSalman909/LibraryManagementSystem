@@ -20,9 +20,9 @@
         <p class="lede">Find books by title, author, category, or ISBN, then submit a borrow request.</p>
 
         <form class="status-inline-form student-books-search-form" th:action="@{/student/books}" method="get">
-            <input class="input" type="text" name="q" th:value="${query}" placeholder="Search by title, author, category, ISBN"/>
+            <input id="studentBookSearchInput" class="input" type="text" name="q" th:value="${query}" placeholder="Search by title, author, category, ISBN"/>
             <button type="submit" class="btn btn-outline">Search</button>
-            <a class="btn btn-ghost" th:href="@{/student/books}">Clear</a>
+            <a id="studentBookSearchClear" class="btn btn-ghost" th:href="@{/student/books}">Clear</a>
         </form>
 
         <div class="table-wrap">
@@ -36,11 +36,12 @@
                     <th class="actions-cell">Borrow</th>
                 </tr>
                 </thead>
-                <tbody>
+                <tbody id="studentBooksTableBody">
                 <tr th:if="${#lists.isEmpty(books)}">
                     <td colspan="5" class="empty-state">No books found for this query.</td>
                 </tr>
-                <tr th:each="book : ${books}">
+                <tr th:each="book : ${books}" class="student-book-row"
+                    th:attr="data-search-value=${#strings.toLowerCase((book.title ?: '') + ' ' + (book.author ?: '') + ' ' + (book.category ?: '') + ' ' + (book.isbn ?: ''))}">
                     <td data-label="Title" th:text="${book.title}">Title</td>
                     <td data-label="Author" th:text="${book.author}">Author</td>
                     <td data-label="Category" th:text="${book.category != null ? book.category : '—'}">—</td>
@@ -86,5 +87,93 @@
     </section>
 </main>
 <footer th:replace="~{fragments/layout :: site-footer}"></footer>
+<script>
+    (function () {
+        const REFRESH_INTERVAL_MS = 1000;
+        const searchInput = document.getElementById('studentBookSearchInput');
+        const clearLink = document.getElementById('studentBookSearchClear');
+        const tableBody = document.getElementById('studentBooksTableBody');
+
+        if (!searchInput || !tableBody) {
+            return;
+        }
+
+        const collectRows = function () {
+            return Array.from(document.querySelectorAll('#studentBooksTableBody .student-book-row'));
+        };
+
+        const applyFilter = function () {
+            const query = searchInput.value.trim().toLowerCase();
+            const rows = collectRows();
+            rows.forEach(function (row) {
+                const searchValue = row.getAttribute('data-search-value') || '';
+                row.style.display = searchValue.includes(query) ? '' : 'none';
+            });
+        };
+
+        const hasActiveInteractiveElement = function () {
+            const active = document.activeElement;
+            if (!active) {
+                return false;
+            }
+            if (active.matches('input, textarea, select, button, [contenteditable="true"]')) {
+                return true;
+            }
+            return false;
+        };
+
+        const refreshRows = function () {
+            if (document.hidden || hasActiveInteractiveElement()) {
+                return;
+            }
+            fetch(window.location.pathname, {
+                method: 'GET',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: {
+                    'X-Requested-With': 'student-books-live-refresh'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        return null;
+                    }
+                    return response.text();
+                })
+                .then(function (html) {
+                    if (!html) {
+                        return;
+                    }
+                    const parser = new DOMParser();
+                    const nextDoc = parser.parseFromString(html, 'text/html');
+                    const nextBody = nextDoc.getElementById('studentBooksTableBody');
+                    if (!nextBody) {
+                        return;
+                    }
+                    if (tableBody.innerHTML !== nextBody.innerHTML) {
+                        tableBody.innerHTML = nextBody.innerHTML;
+                        applyFilter();
+                    }
+                })
+                .catch(function () {
+                    // Ignore transient refresh errors and retry on next interval.
+                });
+        };
+
+        searchInput.addEventListener('input', applyFilter);
+
+        if (clearLink) {
+            clearLink.addEventListener('click', function (event) {
+                event.preventDefault();
+                searchInput.value = '';
+                applyFilter();
+                searchInput.focus();
+            });
+        }
+
+        applyFilter();
+        window.setInterval(refreshRows, REFRESH_INTERVAL_MS);
+    })();
+</script>
 </body>
 </html>
