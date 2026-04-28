@@ -172,7 +172,7 @@ CREATE TABLE `borrow_requests` (
   `book_id` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `student_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `processed_by_librarian_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` enum('APPROVED','CANCELLED','PENDING','REJECTED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('APPROVED','CANCELLED','PENDING','REJECTED') COLLATE utf8mb4_unicode_ci NOT NULL,
   `requested_at` datetime(6) NOT NULL,
   `reviewed_at` datetime(6) DEFAULT NULL,
   `due_date` date DEFAULT NULL,
@@ -209,7 +209,7 @@ CREATE TABLE `deletion_requests` (
   `deletion_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `reason` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `status` enum('approved','pending','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('approved','pending','rejected') COLLATE utf8mb4_unicode_ci NOT NULL,
   `requested_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `reviewed_at` datetime(6) DEFAULT NULL,
   `admin_notes` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
@@ -242,7 +242,7 @@ CREATE TABLE `fines` (
   `issued_at` datetime(6) NOT NULL,
   `notes` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `resolved_at` datetime(6) DEFAULT NULL,
-  `status` enum('PAID','UNPAID','WAIVED') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('PAID','UNPAID','WAIVED') COLLATE utf8mb4_unicode_ci NOT NULL,
   `record_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `resolved_by_librarian_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `student_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -303,7 +303,7 @@ CREATE TABLE `notifications` (
   `notification_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `recipient_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `sender_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `type` enum('account_approved','account_rejected','account_suspended','deletion_approved','deletion_rejected','deletion_requested') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` enum('account_approved','account_rejected','account_suspended','deletion_approved','deletion_rejected','deletion_requested') COLLATE utf8mb4_unicode_ci NOT NULL,
   `title` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_read` tinyint(1) NOT NULL DEFAULT '0',
@@ -337,7 +337,7 @@ DROP TABLE IF EXISTS `registration_requests`;
 CREATE TABLE `registration_requests` (
   `request_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` enum('approved','pending','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('approved','pending','rejected') COLLATE utf8mb4_unicode_ci NOT NULL,
   `submitted_at` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `reviewed_at` datetime(6) DEFAULT NULL,
   `rejection_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -371,7 +371,7 @@ CREATE TABLE `reservations` (
   `fulfilled_at` datetime(6) DEFAULT NULL,
   `notified_at` datetime(6) DEFAULT NULL,
   `queue_position` int NOT NULL,
-  `status` enum('CANCELLED','EXPIRED','FULFILLED','PENDING','READY') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('CANCELLED','EXPIRED','FULFILLED','PENDING','READY') COLLATE utf8mb4_unicode_ci NOT NULL,
   `book_id` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `student_id` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `requested_duration_days` int NOT NULL,
@@ -435,8 +435,8 @@ CREATE TABLE `users` (
   `full_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `password_hash` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_role` enum('ADMIN','LIBRARIAN','STUDENT') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `account_status` enum('active','deleted','deletion_pending','pending','rejected','suspended') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_role` enum('ADMIN','LIBRARIAN','STUDENT') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `account_status` enum('active','deleted','deletion_pending','pending','rejected','suspended') COLLATE utf8mb4_unicode_ci NOT NULL,
   `phone_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `profile_picture` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `profile_picture_focal_x` double DEFAULT NULL,
@@ -455,7 +455,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('3YGL5R','Zain Azam','i22224920@nu.edu.pk','E1:Iqfa5tfhdzVRDvQs1kkGphKY0yg3RnFg3WwR+BqcbJyo+f30hYL7Xw==','LIBRARIAN','pending',NULL,NULL,NULL,NULL,'2026-04-27 22:21:34.392397','2026-04-27 22:21:34.392397',NULL),('4QRTDX','Yaqoob','i222332@nu.edu.pk','E1:+zzYK9/PtNG9k2xUvN/Jm4Fp684ZOzpyiAWzNq4JAO2BShKgoJ8=','STUDENT','active','03110433560','/uploads/profiles/2.jpg',50,50,'2026-03-25 16:40:16.097432','2026-04-27 21:55:46.872966','2026-04-27 16:55:46.869977'),('6NCWFN','Mohammad Rohaan','i222327@nu.edu.pk','E1:xMdPZJRjxQC/rz2msHma+oGWoV2BYtuAaNVdWoE9I+Q/YT4E','ADMIN','active','03110433555','/uploads/profiles/3.jpg',50,50,'2026-03-25 15:58:39.325709','2026-04-27 22:22:17.608732','2026-04-27 17:22:17.557422'),('AECA87','Muhammad Farzeen Tareen Afzal','i222337@nu.edu.pk','E1:sDrmiolcb8aSss11zVqb3sVbTMQnqqPQNQYLJAlWb4RktxNPfsziig==','LIBRARIAN','active',NULL,'/uploads/profiles/5.jpg',NULL,NULL,'2026-04-24 11:50:48.961429','2026-04-27 19:24:22.053117','2026-04-26 21:21:51.398429'),('DNZCTG','Ahmed','i222330@nu.edu.pk','E1:7Ea++ZLl6UxlBSejMOOZB/0GdpMuDEBJ84DKzJ60P5bC/oBxmUc=','STUDENT','active','03110433558','/uploads/profiles/6.jpg',50,50,'2026-03-25 16:04:02.782913','2026-04-27 19:24:39.163746','2026-04-24 06:34:06.413400'),('GM56JU','Bilal','i222328@nu.edu.pk','E1:l1flE0KXSy3ExeJb/s3mZi99NCbwvZl8vHrfrp7PNqlK5NporH8JoA==','LIBRARIAN','active','03110433556','/uploads/profiles/7.jpg',27.12,54.18,'2026-03-25 15:59:39.340954','2026-04-27 19:24:53.554457','2026-04-27 10:19:17.588489'),('PLLV3U','Ali','i222329@nu.edu.pk','E1:IwaVkiu3Qcisu3y1vcC19Zz31sakmiChhTjmd7I2PTf1PTFyfmVViQ==','LIBRARIAN','active','03110433557','/uploads/profiles/8.jpg',50,50,'2026-03-25 16:00:33.260242','2026-04-27 19:25:09.060645','2026-04-24 05:59:06.559444'),('XEKLS9','Mikle','i222331@nu.edu.pk','E1:yp/ReGpx30GYHSw3GyDk7sW02GhKEqfoi2ntRtlJqVWv68l8JZ8=','STUDENT','active','03110433559','/uploads/profiles/9.jpg',79.7,49.12,'2026-03-25 16:38:25.238050','2026-04-27 19:25:23.885366','2026-04-23 21:04:18.775937');
+INSERT INTO `users` VALUES ('3YGL5R','Zain Azam','i22224920@nu.edu.pk','E1:Iqfa5tfhdzVRDvQs1kkGphKY0yg3RnFg3WwR+BqcbJyo+f30hYL7Xw==','LIBRARIAN','pending',NULL,NULL,NULL,NULL,'2026-04-27 22:21:34.392397','2026-04-27 22:21:34.392397',NULL),('4QRTDX','Yaqoob','i222332@nu.edu.pk','E1:+zzYK9/PtNG9k2xUvN/Jm4Fp684ZOzpyiAWzNq4JAO2BShKgoJ8=','STUDENT','active','03110433560','/uploads/profiles/2.jpg',50,50,'2026-03-25 16:40:16.097432','2026-04-27 22:27:25.211191','2026-04-27 17:27:25.206555'),('6NCWFN','Mohammad Rohaan','i222327@nu.edu.pk','E1:xMdPZJRjxQC/rz2msHma+oGWoV2BYtuAaNVdWoE9I+Q/YT4E','ADMIN','active','03110433555','/uploads/profiles/3.jpg',50,50,'2026-03-25 15:58:39.325709','2026-04-28 12:24:11.934873','2026-04-28 07:24:11.850578'),('AECA87','Muhammad Farzeen Tareen Afzal','i222337@nu.edu.pk','E1:sDrmiolcb8aSss11zVqb3sVbTMQnqqPQNQYLJAlWb4RktxNPfsziig==','LIBRARIAN','active',NULL,'/uploads/profiles/5.jpg',NULL,NULL,'2026-04-24 11:50:48.961429','2026-04-27 19:24:22.053117','2026-04-26 21:21:51.398429'),('DNZCTG','Ahmed','i222330@nu.edu.pk','E1:7Ea++ZLl6UxlBSejMOOZB/0GdpMuDEBJ84DKzJ60P5bC/oBxmUc=','STUDENT','active','03110433558','/uploads/profiles/6.jpg',50,50,'2026-03-25 16:04:02.782913','2026-04-27 19:24:39.163746','2026-04-24 06:34:06.413400'),('GM56JU','Bilal','i222328@nu.edu.pk','E1:l1flE0KXSy3ExeJb/s3mZi99NCbwvZl8vHrfrp7PNqlK5NporH8JoA==','LIBRARIAN','active','03110433556','/uploads/profiles/7.jpg',27.12,54.18,'2026-03-25 15:59:39.340954','2026-04-27 22:28:13.503342','2026-04-27 17:28:13.497000'),('PLLV3U','Ali','i222329@nu.edu.pk','E1:IwaVkiu3Qcisu3y1vcC19Zz31sakmiChhTjmd7I2PTf1PTFyfmVViQ==','LIBRARIAN','active','03110433557','/uploads/profiles/8.jpg',50,50,'2026-03-25 16:00:33.260242','2026-04-27 19:25:09.060645','2026-04-24 05:59:06.559444'),('XEKLS9','Mikle','i222331@nu.edu.pk','E1:yp/ReGpx30GYHSw3GyDk7sW02GhKEqfoi2ntRtlJqVWv68l8JZ8=','STUDENT','active','03110433559','/uploads/profiles/9.jpg',79.7,49.12,'2026-03-25 16:38:25.238050','2026-04-27 19:25:23.885366','2026-04-23 21:04:18.775937');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -476,4 +476,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-04-27 22:25:40
+-- Dump completed on 2026-04-28 12:24:15
