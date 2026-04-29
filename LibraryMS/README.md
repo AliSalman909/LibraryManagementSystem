@@ -13,6 +13,40 @@ This project is built with:
 
 ---
 
+## Quick Overview
+
+### Project Description
+
+LibraryMS is a multi-role web application that handles the full library lifecycle: registration and approval, catalog/inventory control, borrow/return workflows, reservation queueing, renewals, fines, receipts, and admin reporting with live status updates.
+
+### How to Run
+
+1. Configure DB in `src/main/resources/application.properties`:
+   - `spring.datasource.url`
+   - `spring.datasource.username`
+   - `spring.datasource.password`
+2. Ensure database `library_db` exists.
+3. Start the app:
+
+```powershell
+cd C:\Users\CodeTech\Downloads\LibraryManagementSystem\LibraryMS
+mvn spring-boot:run
+```
+
+### Key Features
+
+- Role-based portals: Admin, Librarian, Student
+- Book catalog + inventory management
+- Borrow requests, issue/return, and undo return workflow
+- Reservation queue with automatic expiry and queue resequencing
+- Loan renewal with rule-based eligibility messages
+- Fine management (unpaid/paid/waived, adjustments, receipts)
+- Admin reports (fines, activity, issued, overdue)
+- Live updates with interaction-aware refresh pause
+- Responsive UI for mobile/tablet/desktop
+
+---
+
 ## 1) Project Scope
 
 This application covers the complete borrowing lifecycle:
