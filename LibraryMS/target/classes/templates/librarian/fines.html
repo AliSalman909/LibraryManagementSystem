@@ -15,7 +15,7 @@
 
     <section class="dashboard-hero card-elevated">
         <h1>Receipt Printing (Unpaid Fines Only)</h1>
-        <p class="lede">Receipts are available only while the fine is unpaid. Receipt opens in a new tab and can be saved via browser print.</p>
+        <p class="lede">Receipts are available only while the fine is unpaid.</p>
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
@@ -44,14 +44,6 @@
                         <div th:each="fine : ${row.fines}" class="fine-receipt-line" style="margin-bottom:0.65rem;padding-bottom:0.65rem;border-bottom:1px solid #e5e7eb;">
                             <div th:text="${fine.borrowRecord.book.title}">Book</div>
                             <div class="muted-note" th:text="${fine.borrowRecord.book.bookId}">BK</div>
-                            <div class="muted-note"
-                                 th:text="'Fine: ' + ${#numbers.formatDecimal(fine.amount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">
-                                Fine: 0.00 PKR
-                            </div>
-                            <div class="muted-note"
-                                 th:text="'Net: ' + ${#numbers.formatDecimal(fine.netAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">
-                                Net: 0.00 PKR
-                            </div>
                         </div>
                     </td>
                     <td th:text="${#numbers.formatDecimal(row.totalAmount, 1, 'COMMA', 2, 'POINT')} + ' PKR'">0.00 PKR</td>
@@ -79,7 +71,7 @@
 
     <section class="dashboard-hero card-elevated">
         <h2>Live Overdue Books</h2>
-        <p class="lede">These loans are overdue and <strong>not yet returned</strong>. A fine row is only created <strong>after</strong> return. To remove an issued unpaid fine, use <strong>Undo return</strong> on <a th:href="@{/librarian/active-loans}">Active loans</a> — the loan comes back here if still past due.</p>
+        <p class="lede">These books are still out and past their due date. Charges show up only after the book is brought back. If a charge was added by mistake after a return, you can reverse it with Undo return on <a th:href="@{/librarian/active-loans}">Active loans</a>.</p>
         <div class="dashboard-actions" style="margin-bottom:1rem;">
             <a class="btn btn-outline" th:href="@{/librarian/active-loans}">Go to Active loans</a>
         </div>

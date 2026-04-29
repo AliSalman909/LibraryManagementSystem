@@ -1,6 +1,7 @@
 package com.library.service;
 
 import com.library.entity.BorrowRecord;
+import com.library.entity.Fine;
 import com.library.entity.enums.FineStatus;
 import com.library.repository.BorrowRecordRepository;
 import com.library.repository.FineRepository;
@@ -57,15 +58,21 @@ public class ReportService {
         long unpaidIssued = fineRepository.countByStatus(FineStatus.UNPAID);
         long paid = fineRepository.countByStatus(FineStatus.PAID);
         long waived = fineRepository.countByStatus(FineStatus.WAIVED);
-        BigDecimal unpaidIssuedAmount = fineRepository.sumAmountByStatus(FineStatus.UNPAID);
+        // Unpaid (issued): amount still owed after any waived/reduction applied on unpaid fines.
+        BigDecimal unpaidIssuedAmount = fineRepository.sumNetAmountByStatus(FineStatus.UNPAID);
+        BigDecimal unpaidWaivedAdjustment = fineRepository.sumWaivedAmountByStatus(FineStatus.UNPAID);
         BigDecimal paidGrossAmount = fineRepository.sumAmountByStatus(FineStatus.PAID);
-        BigDecimal waivedGrossAmount = fineRepository.sumAmountByStatus(FineStatus.WAIVED);
-        BigDecimal paidNetAmount = nonNegative(paidGrossAmount.subtract(fineRepository.sumWaivedAmountByStatus(FineStatus.PAID)));
+        BigDecimal paidNetAmount =
+                nonNegative(paidGrossAmount.subtract(fineRepository.sumWaivedAmountByStatus(FineStatus.PAID)));
         BigDecimal paidWaivedAdjustment = fineRepository.sumWaivedAmountByStatus(FineStatus.PAID);
-        BigDecimal waivedNetAmount = nonNegative(waivedGrossAmount.subtract(fineRepository.sumWaivedAmountByStatus(FineStatus.WAIVED)));
-        BigDecimal waivedAdjustmentAmount = fineRepository.sumWaivedAmountByStatus(FineStatus.WAIVED);
+        BigDecimal waivedNetAmount = fineRepository.sumNetAmountByStatus(FineStatus.WAIVED);
+        BigDecimal waivedAdjustmentAmount =
+                fineRepository.findAllByStatusWithDetails(FineStatus.WAIVED).stream()
+                        .map(this::effectiveWaivedAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal paidAmount = paidNetAmount;
-        BigDecimal waivedAmount = paidWaivedAdjustment.add(waivedAdjustmentAmount);
+        // All reductions/waivers: unpaid partials + partials on paid + fully waived lines.
+        BigDecimal waivedAmount = unpaidWaivedAdjustment.add(paidWaivedAdjustment).add(waivedAdjustmentAmount);
 
         List<BorrowRecord> liveOverdue = borrowRecordRepository.findAllOverdueWithDetails(LocalDate.now());
         long unpaidNotIssued = liveOverdue.size();
@@ -101,10 +108,11 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public ActivityReport getActivityReport() {
+        LocalDate today = LocalDate.now();
         long totalUsers = userRepository.count();
-        long activeLoans = borrowRecordRepository.countByReturnedAtIsNull();
+        long activeLoans = borrowRecordRepository.countByReturnedAtIsNullAndDueDateGreaterThanEqual(today);
         long completedLoans = borrowRecordRepository.countReturned();
-        long overdueLoans = borrowRecordRepository.findAllOverdueWithDetails(LocalDate.now()).size();
+        long overdueLoans = borrowRecordRepository.findAllOverdueWithDetails(today).size();
         return new ActivityReport(totalUsers, activeLoans, completedLoans, overdueLoans);
     }
 
@@ -146,7 +154,7 @@ public class ReportService {
     public record ActivityReport(
             long totalUsers, long activeLoans, long completedLoans, long overdueLoans) {
 
-        public long totalLoans() { return activeLoans + completedLoans; }
+        public long totalLoans() { return activeLoans + completedLoans + overdueLoans; }
     }
 
     private static BigDecimal nonNegative(BigDecimal value) {
@@ -154,5 +162,17 @@ public class ReportService {
             return BigDecimal.ZERO;
         }
         return value.max(BigDecimal.ZERO);
+    }
+
+    private BigDecimal effectiveWaivedAmount(Fine fine) {
+        if (fine == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal waived = fine.getWaivedAmount() == null ? BigDecimal.ZERO : fine.getWaivedAmount();
+        if (waived.compareTo(BigDecimal.ZERO) > 0) {
+            return waived;
+        }
+        // Backward compatibility: older rows may be WAIVED with waivedAmount = 0.
+        return fine.getAmount() == null ? BigDecimal.ZERO : fine.getAmount();
     }
 }

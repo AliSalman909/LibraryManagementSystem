@@ -140,6 +140,11 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Stri
     long countByReturnedAtIsNull();
 
     /**
+     * Count active loans that are not overdue (due today or later).
+     */
+    long countByReturnedAtIsNullAndDueDateGreaterThanEqual(java.time.LocalDate today);
+
+    /**
      * Count loans returned within a date range (for reports).
      */
     @Query("select count(r) from BorrowRecord r where r.returnedAt is not null")

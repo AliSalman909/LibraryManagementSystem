@@ -99,7 +99,10 @@ public class FineService {
             fine.setResolvedAt(Instant.now());
             fine.setResolvedBy(librarian);
             if (targetStatus == FineStatus.WAIVED) {
-                fine.setWaivedAmount(normalizedWaived);
+                // If librarian marks a fine as WAIVED without entering an explicit adjustment,
+                // treat it as fully waived so admin waived totals reflect this action.
+                BigDecimal waivedToApply = waivedAdjustment == null ? fine.getAmount() : normalizedWaived;
+                fine.setWaivedAmount(waivedToApply);
             } else {
                 // Keep already-applied waived adjustment when marking PAID
                 // so net paid amount stays (total - waived).
