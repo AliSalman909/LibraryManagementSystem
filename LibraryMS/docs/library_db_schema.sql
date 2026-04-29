@@ -1,8 +1,51 @@
+-- =========================================================
+-- Library Management System - Canonical MySQL Schema
+-- Compatible with current project codebase
+-- =========================================================
+-- How to run whole schema at once
+-- MySQL CLI:
+-- mysql -u root -p < your_schema.sql
+-- or inside mysql shell: SOURCE /full/path/your_schema.sql;
+-- MySQL Workbench:
+-- Open the script and click Run All (lightning bolt)
+-- we can absolutely execute the whole schema in one shot safely.
+
+-- If the script is written in correct dependency order (parent tables first), FK errors won’t happen.
+-- For rerunnable scripts, this pattern is standard:
+
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- DROP TABLE ... (children/parents any order)
+-- SET FOREIGN_KEY_CHECKS = 1;
+-- then CREATE TABLE ... in normal order
+-- So No GO in MySQL to execute in a batch like SQL Server, but we can absolutely execute the whole schema in one shot safely.
+-- Also we have export the schema of library_db (contains the DDL Commands) directly from my sql that is also available in docs folder
+
 CREATE DATABASE IF NOT EXISTS library_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE library_db;
+
+-- ---------------------------------------------------------
+-- Optional cleanup (makes script rerunnable safely)
+-- ---------------------------------------------------------
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS deletion_requests;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS registration_requests;
+DROP TABLE IF EXISTS fines;
+DROP TABLE IF EXISTS reservations;
+DROP TABLE IF EXISTS borrow_records;
+DROP TABLE IF EXISTS borrow_requests;
+DROP TABLE IF EXISTS book_copies;
+DROP TABLE IF EXISTS books;
+DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS librarians;
+DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- =========================================================
 -- Core user tables
@@ -115,7 +158,9 @@ CREATE TABLE borrow_requests (
   CONSTRAINT fk_borrow_requests_student FOREIGN KEY (student_id)
     REFERENCES students(user_id) ON DELETE CASCADE,
   CONSTRAINT fk_borrow_requests_processed_by_librarian FOREIGN KEY (processed_by_librarian_id)
-    REFERENCES librarians(user_id) ON DELETE SET NULL
+    REFERENCES librarians(user_id) ON DELETE SET NULL,
+  CONSTRAINT chk_borrow_requests_duration
+    CHECK (requested_duration_days IN (7, 14, 21, 28))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE borrow_records (
@@ -169,6 +214,16 @@ CREATE TABLE reservations (
   CONSTRAINT fk_reservations_student FOREIGN KEY (student_id)
     REFERENCES students(user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Indexes expected/used by app migration and queries
+CREATE INDEX idx_reservation_student_id
+  ON reservations (student_id);
+
+CREATE INDEX idx_reservation_book_id
+  ON reservations (book_id);
+
+CREATE INDEX idx_reservation_student_book_status
+  ON reservations (student_id, book_id, status);
 
 -- =========================================================
 -- Fines
@@ -242,14 +297,3 @@ CREATE TABLE deletion_requests (
   CONSTRAINT fk_deletion_requests_user FOREIGN KEY (user_id)
     REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- ENGINE=InnoDB: This tells MySQL to use the InnoDB storage engine for this table,
--- which supports features like transactions, foreign keys, and row-level locking.
-
--- DEFAULT CHARSET=utf8mb4: This sets the default character set for the table to utf8mb4,
--- which allows you to store any character, including emojis and special symbols, in multiple languages.
-
--- COLLATE=utf8mb4_unicode_ci: This specifies the collation for the table, which defines how string comparisons are made 
--- (e.g., case-insensitive, accent-insensitive). utf8mb4_unicode_ci means that the table will use Unicode rules for sorting and comparing text, 
--- and it will be case-insensitive and accent-insensitive.
