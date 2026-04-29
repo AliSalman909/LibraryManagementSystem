@@ -62,10 +62,9 @@
             </table>
         </div>
 
-        <p class="back-link">
-            <a th:href="@{/admin/dashboard}">← Admin dashboard</a>
-            <span aria-hidden="true"> · </span>
-            <a th:href="@{/admin/users}">All user accounts</a>
+        <p class="back-link pending-nav-links nav-button-group">
+            <a class="btn btn-outline nav-action-btn" th:href="@{/admin/dashboard}">Admin dashboard</a>
+            <a class="btn btn-outline nav-action-btn" th:href="@{/admin/users}">All user accounts</a>
         </p>
     </section>
 </main>

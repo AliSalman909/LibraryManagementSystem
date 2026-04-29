@@ -1127,6 +1127,20 @@ select:-webkit-autofill:focus {
     font-size: 0.9rem;
 }
 
+.pending-nav-links {
+    font-size: 1.05rem;
+}
+
+.nav-button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.nav-action-btn {
+    font-size: 1rem;
+}
+
 .sr-only {
     position: absolute;
     width: 1px;

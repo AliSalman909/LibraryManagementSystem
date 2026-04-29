@@ -110,7 +110,9 @@
             </table>
         </div>
 
-        <p class="back-link"><a th:href="@{/admin/dashboard}">← Admin dashboard</a></p>
+        <p class="back-link nav-button-group">
+            <a class="btn btn-outline nav-action-btn" th:href="@{/admin/dashboard}">Admin dashboard</a>
+        </p>
     </section>
 </main>
 <footer th:replace="~{fragments/layout :: site-footer}"></footer>
