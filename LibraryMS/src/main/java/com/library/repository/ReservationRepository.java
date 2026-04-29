@@ -11,6 +11,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ReservationRepository extends JpaRepository<Reservation, String> {
+    List<Reservation> findByStatusIn(List<ReservationStatus> statuses);
+
+    long deleteByStudentUserIdAndBookBookIdAndStatusAndReservationIdNot(
+            String studentUserId,
+            String bookId,
+            ReservationStatus status,
+            String reservationId);
 
     /**
      * Find the next PENDING reservation for a book (lowest queue_position first).
@@ -52,6 +59,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
     long countByBookAndStatusIn(
             @Param("bookId") String bookId,
             @Param("statuses") List<ReservationStatus> statuses);
+
+    /**
+     * Count active reservations (PENDING or READY) for a book, excluding one student.
+     * Used by RenewalService to block renewals only when other students are waiting.
+     */
+    @Query("""
+            select count(r) from Reservation r
+            where r.book.bookId = :bookId
+              and r.status in :statuses
+              and r.student.userId <> :excludedStudentUserId
+            """)
+    long countByBookAndStatusInAndStudentUserIdNot(
+            @Param("bookId") String bookId,
+            @Param("statuses") List<ReservationStatus> statuses,
+            @Param("excludedStudentUserId") String excludedStudentUserId);
 
     /**
      * Find max queue position for a book (to assign the next FIFO slot).

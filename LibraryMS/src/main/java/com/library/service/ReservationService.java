@@ -1,11 +1,14 @@
 package com.library.service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +29,6 @@ import com.library.repository.BorrowRecordRepository;
 import com.library.repository.LibrarianRepository;
 import com.library.repository.ReservationRepository;
 import com.library.repository.StudentRepository;
-import java.time.LocalDate;
 
 /**
  * Manages the book reservation / waitlist system.
@@ -130,6 +132,7 @@ public class ReservationService {
             reservation.getStatus() != ReservationStatus.READY) {
             throw new BusinessRuleException("Only pending or ready reservations can be cancelled.");
         }
+        removeOlderSameStatusRows(reservation, ReservationStatus.CANCELLED);
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservationRepository.save(reservation);
     }
@@ -195,6 +198,14 @@ public class ReservationService {
                 reservation.getStudent().getUserId(), reservation.getBook().getBookId())) {
             throw new BusinessRuleException("This student already has an active loan for this book.");
         }
+        int effectiveLoanLimit = Math.min(3, reservation.getStudent().getMaxBorrowLimit());
+        long activeUniqueBooks = borrowRecordRepository.countDistinctBookBookIdByStudentUserIdAndReturnedAtIsNull(
+                reservation.getStudent().getUserId());
+        if (activeUniqueBooks >= effectiveLoanLimit) {
+            throw new BusinessRuleException(
+                    "This student already has " + activeUniqueBooks
+                            + " active loans. Return one book before fulfilling this reservation.");
+        }
         Librarian librarian = librarianRepository.findByUserIdWithUser(librarianUserId)
                 .orElseThrow(() -> new BusinessRuleException("Librarian account not found."));
         // Guard grant action: reservation can only be fulfilled if inventory still has a free copy.
@@ -246,6 +257,7 @@ public class ReservationService {
         record.setDueDate(dueDate);
         borrowRecordRepository.save(record);
 
+        removeOlderSameStatusRows(reservation, ReservationStatus.FULFILLED);
         reservation.setStatus(ReservationStatus.FULFILLED);
         reservation.setFulfilledAt(Instant.now());
         reservationRepository.save(reservation);
@@ -261,6 +273,7 @@ public class ReservationService {
             throw new BusinessRuleException("Cannot cancel a reservation that is already " +
                     reservation.getStatus().name().toLowerCase() + ".");
         }
+        removeOlderSameStatusRows(reservation, ReservationStatus.CANCELLED);
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservationRepository.save(reservation);
     }
@@ -274,10 +287,33 @@ public class ReservationService {
     public int expireOverdueReservations() {
         List<Reservation> expired = reservationRepository.findExpiredReady(Instant.now());
         for (Reservation r : expired) {
+            removeOlderSameStatusRows(r, ReservationStatus.EXPIRED);
             r.setStatus(ReservationStatus.EXPIRED);
         }
         reservationRepository.saveAll(expired);
         return expired.size();
+    }
+
+    /**
+     * Auto-cancel active reservations that pass their allowed window.
+     * - READY: expires at pickup deadline (expiresAt).
+     * - PENDING: expires after requestedDurationDays from createdAt.
+     */
+    @Scheduled(fixedDelayString = "${app.reservation-auto-cancel-check-ms:60000}")
+    @Transactional
+    public void autoCancelExpiredActiveReservations() {
+        List<Reservation> active = reservationRepository.findByStatusIn(ACTIVE_STATUSES);
+        Instant now = Instant.now();
+        for (Reservation reservation : active) {
+            Instant expiry = resolveReservationExpiryInstant(reservation);
+            if (expiry != null && now.isAfter(expiry)) {
+                removeOlderSameStatusRows(reservation, ReservationStatus.CANCELLED);
+                reservation.setStatus(ReservationStatus.CANCELLED);
+                reservation.setNotifiedAt(null);
+                reservation.setExpiresAt(null);
+            }
+        }
+        reservationRepository.saveAll(java.util.Objects.requireNonNull(active));
     }
 
     // -----------------------------------------------------------------------
@@ -360,5 +396,33 @@ public class ReservationService {
                             + " days. Please choose a smaller duration.");
         }
         return selectedDays;
+    }
+
+    private Instant resolveReservationExpiryInstant(Reservation reservation) {
+        if (reservation == null) {
+            return null;
+        }
+        if (reservation.getStatus() == ReservationStatus.READY) {
+            return reservation.getExpiresAt();
+        }
+        if (reservation.getStatus() != ReservationStatus.PENDING || reservation.getCreatedAt() == null) {
+            return null;
+        }
+        int days = reservation.getRequestedDurationDays() > 0
+                ? reservation.getRequestedDurationDays()
+                : DEFAULT_DURATION_DAYS;
+        LocalDate expiresOn = reservation.getCreatedAt()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+                .plusDays(days);
+        return expiresOn.plusDays(1).atStartOfDay(ZoneId.systemDefault()).minusSeconds(1).toInstant();
+    }
+
+    private void removeOlderSameStatusRows(Reservation current, ReservationStatus targetStatus) {
+        reservationRepository.deleteByStudentUserIdAndBookBookIdAndStatusAndReservationIdNot(
+                current.getStudent().getUserId(),
+                current.getBook().getBookId(),
+                targetStatus,
+                current.getReservationId());
     }
 }

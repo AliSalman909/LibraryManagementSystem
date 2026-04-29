@@ -1,10 +1,8 @@
 package com.library.service;
 
 import com.library.entity.BorrowRecord;
-import com.library.entity.enums.FineStatus;
 import com.library.exception.BusinessRuleException;
 import com.library.repository.BorrowRecordRepository;
-import com.library.repository.FineRepository;
 import com.library.repository.ReservationRepository;
 import com.library.entity.enums.ReservationStatus;
 import java.time.Instant;
@@ -37,15 +35,12 @@ public class RenewalService {
             List.of(ReservationStatus.PENDING, ReservationStatus.READY);
 
     private final BorrowRecordRepository borrowRecordRepository;
-    private final FineRepository fineRepository;
     private final ReservationRepository reservationRepository;
 
     public RenewalService(
             BorrowRecordRepository borrowRecordRepository,
-            FineRepository fineRepository,
             ReservationRepository reservationRepository) {
         this.borrowRecordRepository = borrowRecordRepository;
-        this.fineRepository = fineRepository;
         this.reservationRepository = reservationRepository;
     }
 
@@ -85,15 +80,9 @@ public class RenewalService {
                     "This loan has already been renewed the maximum number of times (" + MAX_RENEWALS + ").");
         }
 
-        // Unpaid fine blocker
-        if (fineRepository.existsByStudentUserIdAndStatus(studentUserId, FineStatus.UNPAID)) {
-            throw new BusinessRuleException(
-                    "You have unpaid fines. Please clear all outstanding fines before renewing a loan.");
-        }
-
         // Reservation blocker — block if another student is waiting for this book
-        if (reservationRepository.countByBookAndStatusIn(
-                record.getBook().getBookId(), ACTIVE_RES_STATUSES) > 0) {
+        if (reservationRepository.countByBookAndStatusInAndStudentUserIdNot(
+                record.getBook().getBookId(), ACTIVE_RES_STATUSES, studentUserId) > 0) {
             throw new BusinessRuleException(
                     "This book has active reservations from other students. Renewal is not allowed.");
         }
@@ -124,14 +113,26 @@ public class RenewalService {
      */
     @Transactional(readOnly = true)
     public boolean canRenew(BorrowRecord record, String studentUserId) {
+        return renewBlockReason(record, studentUserId) == null;
+    }
+
+    @Transactional(readOnly = true)
+    public String renewBlockReason(BorrowRecord record, String studentUserId) {
         LocalDate today = LocalDate.now();
-        if (record.getReturnedAt() != null) return false;
-        if (record.getDueDate().isBefore(today)) return false;
-        if (record.getRenewCount() >= MAX_RENEWALS) return false;
-        if (fineRepository.existsByStudentUserIdAndStatus(studentUserId, FineStatus.UNPAID)) return false;
-        return reservationRepository.countByBookAndStatusIn(
-                        record.getBook().getBookId(), ACTIVE_RES_STATUSES)
-                == 0;
+        if (record.getReturnedAt() != null) {
+            return "This loan is already returned.";
+        }
+        if (record.getDueDate().isBefore(today)) {
+            return "Overdue: renew is unavailable until this book is returned.";
+        }
+        if (record.getRenewCount() >= MAX_RENEWALS) {
+            return "No renewals remaining for this loan.";
+        }
+        if (reservationRepository.countByBookAndStatusInAndStudentUserIdNot(
+                record.getBook().getBookId(), ACTIVE_RES_STATUSES, studentUserId) > 0) {
+            return "Renewal blocked: this title is currently reserved by another student.";
+        }
+        return null;
     }
 
     @Transactional(readOnly = true)

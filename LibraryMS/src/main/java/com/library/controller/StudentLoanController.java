@@ -31,13 +31,17 @@ public class StudentLoanController {
         // Pre-compute renew-ability per record so the template can show/hide the button
         var canRenewMap = new java.util.HashMap<String, Boolean>();
         var renewOptionsMap = new java.util.HashMap<String, java.util.List<Integer>>();
+        var renewBlockReasonMap = new java.util.HashMap<String, String>();
         for (var loan : activeLoans) {
-            canRenewMap.put(loan.getRecordId(), renewalService.canRenew(loan, principal.getUserId()));
+            String blockReason = renewalService.renewBlockReason(loan, principal.getUserId());
+            canRenewMap.put(loan.getRecordId(), blockReason == null);
             renewOptionsMap.put(loan.getRecordId(), renewalService.allowedRenewDurations(loan));
+            renewBlockReasonMap.put(loan.getRecordId(), blockReason);
         }
         model.addAttribute("activeLoans", activeLoans);
         model.addAttribute("canRenewMap", canRenewMap);
         model.addAttribute("renewOptionsMap", renewOptionsMap);
+        model.addAttribute("renewBlockReasonMap", renewBlockReasonMap);
         model.addAttribute("maxRenewals", renewalService.getMaxRenewals());
         return "student/my-loans";
     }

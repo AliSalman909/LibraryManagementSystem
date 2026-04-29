@@ -69,10 +69,9 @@
                                 <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.35rem;">Renew</button>
                             </form>
                         </th:block>
-                        <span th:if="${!canRenewMap[loan.recordId] and loan.dueDate.isBefore(T(java.time.LocalDate).now())}"
-                              class="muted-note">Overdue: return and pay fine first.</span>
-                        <span th:if="${!canRenewMap[loan.recordId] and !loan.dueDate.isBefore(T(java.time.LocalDate).now())}"
-                              class="muted-note">Renewal not available.</span>
+                        <span th:if="${!canRenewMap[loan.recordId]}"
+                              class="muted-note"
+                              th:text="${renewBlockReasonMap[loan.recordId]}">Renewal not available.</span>
                     </td>
                 </tr>
                 </tbody>

@@ -4,6 +4,7 @@ import com.library.exception.BusinessRuleException;
 import com.library.messages.UserFacingMessages;
 import com.library.security.LibraryUserDetails;
 import com.library.service.ReservationService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -45,6 +46,10 @@ public class StudentReservationController {
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError",
                     UserFacingMessages.orGeneric(ex.getMessage()));
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "flashError",
+                    "Reservation could not be saved right now due to a data conflict. Please refresh and try again.");
         }
         return "redirect:/student/reservations";
     }
@@ -61,6 +66,10 @@ public class StudentReservationController {
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("flashError",
                     UserFacingMessages.orGeneric(ex.getMessage()));
+        } catch (DataIntegrityViolationException ex) {
+            redirectAttributes.addFlashAttribute(
+                    "flashError",
+                    "Reservation could not be cancelled right now due to a data conflict. Please refresh and try again.");
         }
         return "redirect:/student/reservations";
     }
