@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Pending registrations — Admin')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main dashboard-main-wide">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/admin/dashboard}">Admin</a>
+        <span aria-hidden="true"> / </span>
+        <span>Pending registrations</span>
+    </nav>
+
+    <div th:if="${flashSuccess}" class="alert alert-success" role="status" th:text="${flashSuccess}">Saved</div>
+    <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
+
+    <section class="dashboard-hero card-elevated admin-table-section">
+        <h1>Pending registration requests</h1>
+
+        <div th:if="${#lists.isEmpty(requests)}" class="empty-state">
+            <p>No pending requests right now.</p>
+            <p><a class="btn btn-outline" th:href="@{/admin/dashboard}">Back to dashboard</a></p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(requests)}" class="table-wrap">
+            <table class="data-table pending-registrations-table">
+                <thead>
+                <tr>
+                    <th scope="col">Submitted</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="req : ${requests}">
+                    <td>
+                        <time th:datetime="${req.submittedAt}">
+                            <span th:text="${#temporals.format(req.submittedAt, 'yyyy-MM-dd')}">2026-01-01</span>
+                            <span class="date-time-gap" aria-hidden="true"></span>
+                            <span th:text="${#temporals.format(req.submittedAt, 'HH:mm:ss')}">12:30:45</span>
+                        </time>
+                    </td>
+                    <td th:text="${req.user.fullName}">Name</td>
+                    <td th:text="${req.user.email}">email</td>
+                    <td><span class="role-pill" th:text="${req.user.userRole}">STUDENT</span></td>
+                    <td class="actions-cell">
+                        <form class="inline-action" th:action="@{/admin/registrations/{id}/approve(id=${req.requestId})}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                        </form>
+                        <form class="reject-form" th:action="@{/admin/registrations/{id}/reject(id=${req.requestId})}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <label class="sr-only" th:for="'reason-' + ${req.requestId}">Rejection reason (optional)</label>
+                            <input class="input input-sm pending-reason-input" type="text" name="reason" maxlength="255"
+                                   th:id="'reason-' + ${req.requestId}" placeholder="Reason (optional)"/>
+                            <button type="submit" class="btn btn-outline btn-sm">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="back-link pending-nav-links nav-button-group">
+            <a class="btn btn-outline nav-action-btn" th:href="@{/admin/dashboard}">Admin dashboard</a>
+            <a class="btn btn-outline nav-action-btn" th:href="@{/admin/users}">All user accounts</a>
+        </p>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

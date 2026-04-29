@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "LibraryMS: Maven Compile",
+      "type": "shell",
+      "command": "mvn compile",
+      "options": {
+        "cwd": "${workspaceFolder}/LibraryMS"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$javac"
+      ]
+    },
+    {
+      "label": "LibraryMS: Spring Boot Run (Maven)",
+      "type": "shell",
+      "command": "mvn spring-boot:run",
+      "options": {
+        "cwd": "${workspaceFolder}/LibraryMS"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

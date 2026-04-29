@@ -1,0 +1,49 @@
+{
+  "properties": [
+    {
+      "name": "app.browser.open-on-start",
+      "type": "java.lang.String",
+      "description": "A description for 'app.browser.open-on-start'"
+    },
+    {
+      "name": "app.upload.dir",
+      "type": "java.lang.String",
+      "description": "A description for 'app.upload.dir'"
+    },
+    {
+      "name": "app.security.password-secret",
+      "type": "java.lang.String",
+      "description": "A description for 'app.security.password-secret'"
+    },
+    {
+      "name": "app.fine.per-day-rate",
+      "type": "java.lang.Double",
+      "description": "Daily overdue fine amount used by fine calculations."
+    },
+    {
+      "name": "app.reservation.pickup-window-hours",
+      "type": "java.lang.Integer",
+      "description": "How many hours a READY reservation remains available for pickup."
+    },
+    {
+      "name": "app.maintenance.backup.dir",
+      "type": "java.lang.String",
+      "description": "Directory where the admin maintenance backup SQL file is stored."
+    },
+    {
+      "name": "app.maintenance.backup.filename",
+      "type": "java.lang.String",
+      "description": "Single backup filename that is replaced on each maintenance run."
+    },
+    {
+      "name": "app.maintenance.cleanup.paths",
+      "type": "java.lang.String",
+      "description": "Comma-separated list of temporary/cache directories to clean during admin maintenance."
+    },
+    {
+      "name": "app.maintenance.temp.dir",
+      "type": "java.lang.String",
+      "description": "Legacy single temp directory option. Prefer app.maintenance.cleanup.paths."
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Fine Report — Admin')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/admin/dashboard}">Admin</a>
+        <span aria-hidden="true"> / </span>
+        <span>Fine Report</span>
+    </nav>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Reports</p>
+        <h1>Fine Collection Summary</h1>
+
+        <div class="report-cards" th:if="${fineReport != null}">
+            <div class="report-card report-card--warn">
+                <div class="report-card-label">Unpaid (Issued)</div>
+                <div class="report-card-value" th:text="${fineReport.unpaidIssuedCount()}">0</div>
+                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.unpaidIssuedAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+            </div>
+            <div class="report-card report-card--warn">
+                <div class="report-card-label">Unpaid (Not Issued)</div>
+                <div class="report-card-value" th:text="${fineReport.unpaidNotIssuedCount()}">0</div>
+                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.unpaidNotIssuedAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+            </div>
+            <div class="report-card report-card--success">
+                <div class="report-card-label">Paid</div>
+                <div class="report-card-value" th:text="${fineReport.paidCount()}">0</div>
+                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.paidAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+            </div>
+            <div class="report-card report-card--muted">
+                <div class="report-card-label">Waived</div>
+                <div class="report-card-value" th:text="${fineReport.waivedCount()}">0</div>
+                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.waivedAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+            </div>
+            <div class="report-card report-card--accent">
+                <div class="report-card-label">Total</div>
+                <div class="report-card-value" th:text="${fineReport.totalCount()}">0</div>
+                <div class="report-card-amount">PKR <span th:text="${#numbers.formatDecimal(fineReport.totalAmount(), 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+            </div>
+        </div>
+
+        <div class="dashboard-actions" style="margin-top:1.5rem;">
+            <a th:href="@{/admin/reports/overdue}" class="btn btn-outline">Overdue Report →</a>
+            <a th:href="@{/admin/reports/issued}" class="btn btn-outline">Issued Books →</a>
+            <a th:href="@{/admin/reports/activity}" class="btn btn-outline">Activity Report →</a>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Student — Library')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main">
+    <section class="dashboard-hero card-elevated">
+        <div class="dashboard-hero-layout">
+            <div class="dashboard-profile-slot" th:if="${profilePictureUrl != null}">
+                <img class="dashboard-avatar" th:src="${profilePictureUrl}" alt="Your profile photo"
+                     th:style="|object-position: ${profilePictureFocalX}% ${profilePictureFocalY}%|"/>
+            </div>
+            <div class="dashboard-hero-main">
+                <p class="eyebrow">Student</p>
+                <h1>Welcome to your library portal</h1>
+                <p class="lede"><strong sec:authentication="principal.fullName">Student</strong>
+                    <span class="lede-email">(<span sec:authentication="name">email</span>)</span></p>
+                <ul class="checklist">
+                    <li>Browse and request titles</li>
+                    <li>Track loans and return dates</li>
+                    <li>Stay within your borrowing limit</li>
+                </ul>
+                <div class="dashboard-actions student-dashboard-actions-grid">
+                    <a class="btn btn-primary portal-primary-action" th:href="@{/student/books}">Search Books</a>
+                    <a class="btn btn-primary portal-primary-action" th:href="@{/student/borrow-requests}">My Requests</a>
+                    <a class="btn btn-primary portal-primary-action" th:href="@{/student/my-loans}">My Loans</a>
+                    <a class="btn btn-primary portal-primary-action" th:href="@{/student/fines}">My Fines</a>
+                    <a class="btn btn-primary portal-primary-action" th:href="@{/student/reservations}">My Reservations</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Issued Books Report — Admin')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main dashboard-main-wide">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/admin/dashboard}">Admin</a>
+        <span aria-hidden="true"> / </span>
+        <span>Issued Books</span>
+    </nav>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Reports</p>
+        <h1>Currently Issued Books</h1>
+
+        <div th:if="${#lists.isEmpty(activeLoans)}" class="alert alert-success" role="status">
+            No books are currently issued.
+        </div>
+
+        <div th:if="${!#lists.isEmpty(activeLoans)}" class="alert alert-warn" role="status"
+             th:text="${#lists.size(activeLoans) + ' issued/unreturned book(s) currently off-shelf (on-time + overdue).'}">Count</div>
+
+        <div class="table-wrap" th:if="${!#lists.isEmpty(activeLoans)}">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Book</th>
+                    <th>Author</th>
+                    <th>Copy ISBN</th>
+                    <th>Issued</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="loan : ${activeLoans}"
+                    th:classappend="${loan.dueDate.isBefore(T(java.time.LocalDate).now())} ? 'row-overdue' : ''">
+                    <td th:text="${loan.student.user.fullName}">Student</td>
+                    <td th:text="${loan.book.title}">Title</td>
+                    <td th:text="${loan.book.author}">Author</td>
+                    <td class="cell-mono" th:text="${loan.copy.isbnCode}">ISBN</td>
+                    <td th:text="${#temporals.format(loan.issuedAt, 'yyyy-MM-dd', #locale)}">2026-01-01</td>
+                    <td th:text="${loan.dueDate}">2026-01-15</td>
+                    <td>
+                        <span th:if="${loan.dueDate.isBefore(T(java.time.LocalDate).now())}"
+                              class="status-pill status-pill--overdue">Overdue</span>
+                        <span th:if="${!loan.dueDate.isBefore(T(java.time.LocalDate).now())}"
+                              class="status-pill status-pill--active">On Time</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dashboard-actions" style="margin-top:1.5rem;">
+            <a th:href="@{/admin/reports/overdue}" class="btn btn-outline">Overdue Report →</a>
+            <a th:href="@{/admin/reports/fines}" class="btn btn-outline">Fine Report →</a>
+            <a th:href="@{/admin/reports/activity}" class="btn btn-outline">Activity Report →</a>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,248 @@
+package com.library.repository;
+
+import com.library.entity.Reservation;
+import com.library.entity.enums.ReservationStatus;
+import jakarta.persistence.LockModeType;
+import java.time.Instant;
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+public interface ReservationRepository extends JpaRepository<Reservation, String> {
+    List<Reservation> findByStatusIn(List<ReservationStatus> statuses);
+
+    @Modifying
+    @Query("""
+            delete from Reservation r
+            where r.student.userId = :studentUserId
+              and r.book.bookId = :bookId
+              and r.status = :status
+              and r.reservationId <> :reservationId
+            """)
+    long deleteOtherByStudentBookAndStatus(
+            @Param("studentUserId") String studentUserId,
+            @Param("bookId") String bookId,
+            @Param("status") ReservationStatus status,
+            @Param("reservationId") String reservationId);
+
+    /**
+     * Find the next PENDING reservation for a book (lowest queue_position first).
+     * Used when a copy is returned to promote to READY.
+     */
+    @Query("""
+            select r from Reservation r
+            join fetch r.student s
+            join fetch s.user
+            join fetch r.book
+            where r.book.bookId = :bookId and r.status = 'PENDING'
+            order by r.queuePosition asc
+            """)
+    List<Reservation> findPendingByBookOrderByPosition(@Param("bookId") String bookId);
+
+    /**
+     * Check if a student already has an active reservation (PENDING or READY) for a book.
+     */
+    @Query("""
+            select count(r) > 0 from Reservation r
+            where r.student.userId = :studentUserId
+              and r.book.bookId = :bookId
+              and r.status in :statuses
+            """)
+    boolean existsByStudentAndBookAndStatusIn(
+            @Param("studentUserId") String studentUserId,
+            @Param("bookId") String bookId,
+            @Param("statuses") List<ReservationStatus> statuses);
+
+    /**
+     * Count active reservations (PENDING or READY) for a book.
+     * Used by RenewalService to block renewals when others are waiting.
+     */
+    @Query("""
+            select count(r) from Reservation r
+            where r.book.bookId = :bookId
+              and r.status in :statuses
+            """)
+    long countByBookAndStatusIn(
+            @Param("bookId") String bookId,
+            @Param("statuses") List<ReservationStatus> statuses);
+
+    /**
+     * Count active reservations (PENDING or READY) for a book, excluding one student.
+     * Used by RenewalService to block renewals only when other students are waiting.
+     */
+    @Query("""
+            select count(r) from Reservation r
+            where r.book.bookId = :bookId
+              and r.status in :statuses
+              and r.student.userId <> :excludedStudentUserId
+            """)
+    long countByBookAndStatusInAndStudentUserIdNot(
+            @Param("bookId") String bookId,
+            @Param("statuses") List<ReservationStatus> statuses,
+            @Param("excludedStudentUserId") String excludedStudentUserId);
+
+    /**
+     * Find max queue position for a book (to assign the next FIFO slot).
+     */
+    @Query("select coalesce(max(r.queuePosition), 0) from Reservation r where r.book.bookId = :bookId")
+    int findMaxQueuePositionByBookId(@Param("bookId") String bookId);
+
+    /**
+     * Student's own reservations (all statuses) with book info, newest first.
+     */
+    @Query("""
+            select r from Reservation r
+            join fetch r.book
+            where r.student.userId = :studentUserId
+            order by r.createdAt desc
+            """)
+    List<Reservation> findAllByStudentWithBook(@Param("studentUserId") String studentUserId);
+
+    /**
+     * All reservations with student + book details for the librarian queue view.
+     * Ordered by book title then queue position.
+     */
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            join fetch r.student s
+            join fetch s.user
+            order by
+                case
+                    when r.status = 'PENDING' then 0
+                    when r.status = 'READY' then 1
+                    else 2
+                end asc,
+                r.createdAt asc,
+                r.queuePosition asc
+            """)
+    List<Reservation> findAllWithDetails();
+
+    /**
+     * All READY reservations for the librarian to act on.
+     */
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            join fetch r.student s
+            join fetch s.user
+            where r.status = 'READY'
+            order by r.notifiedAt asc, r.queuePosition asc
+            """)
+    List<Reservation> findAllReadyWithDetails();
+
+    /**
+     * Expired READY reservations (pickup window passed).
+     */
+    @Query("""
+            select r from Reservation r
+            where r.status = 'READY' and r.expiresAt < :now
+            """)
+    List<Reservation> findExpiredReady(@Param("now") Instant now);
+
+    /**
+     * READY reservations for a book whose notification time is outside the undo window
+     * for a given return (blocks undo — not caused by this return).
+     */
+    @Query("""
+            select count(r) > 0 from Reservation r
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+              and (r.notifiedAt is null or r.notifiedAt < :fromInclusive or r.notifiedAt > :toInclusive)
+            """)
+    boolean existsReadyOutsideNotifiedWindow(
+            @Param("bookId") String bookId,
+            @Param("fromInclusive") Instant fromInclusive,
+            @Param("toInclusive") Instant toInclusive);
+
+    /**
+     * READY reservations likely promoted by this return (same notify batch), ordered oldest first.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+              and r.notifiedAt >= :fromInclusive
+              and r.notifiedAt <= :toInclusive
+            order by r.notifiedAt asc
+            """)
+    List<Reservation> findReadyNotifiedInWindowForUpdate(
+            @Param("bookId") String bookId,
+            @Param("fromInclusive") Instant fromInclusive,
+            @Param("toInclusive") Instant toInclusive);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.book.bookId = :bookId
+              and r.status = 'PENDING'
+            order by r.queuePosition asc
+            """)
+    List<Reservation> findPendingByBookOrderByPositionForUpdate(@Param("bookId") String bookId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.book.bookId = :bookId
+              and r.status in ('PENDING', 'READY')
+            order by
+                case
+                    when r.status = 'READY' then 0
+                    else 1
+                end asc,
+                r.queuePosition asc,
+                r.createdAt asc
+            """)
+    List<Reservation> findActiveByBookOrderByQueueForUpdate(@Param("bookId") String bookId);
+
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            join fetch r.student s
+            join fetch s.user
+            where r.status = 'EXPIRED'
+            order by r.createdAt desc
+            """)
+    List<Reservation> findAllExpiredWithDetails();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+            order by r.queuePosition asc
+            """)
+    List<Reservation> findReadyByBookForUpdate(@Param("bookId") String bookId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.status = 'READY'
+              and b.availableCopies <= 0
+            order by r.createdAt asc
+            """)
+    List<Reservation> findReadyWithUnavailableBookForUpdate();
+
+    @Query("""
+            select count(r) from Reservation r
+            where r.book.bookId = :bookId
+              and r.status = 'READY'
+            """)
+    long countReadyByBookId(@Param("bookId") String bookId);
+
+    @Query("""
+            select distinct r.book.bookId from Reservation r
+            where r.status in ('PENDING', 'READY')
+            """)
+    List<String> findBookIdsWithActiveReservations();
+
+    long deleteByBookBookId(String bookId);
+}

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Admin — Library')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main">
+    <div th:if="${flashSuccess}" class="alert alert-success" role="status" th:text="${flashSuccess}">OK</div>
+    <div th:if="${flashError}" class="alert alert-error" role="alert" th:text="${flashError}">Error</div>
+
+    <section class="dashboard-hero card-elevated">
+        <div class="dashboard-hero-layout">
+            <div class="dashboard-profile-slot" th:if="${profilePictureUrl != null}">
+                <img class="dashboard-avatar" th:src="${profilePictureUrl}" alt="Your profile photo"
+                     th:style="|object-position: ${profilePictureFocalX}% ${profilePictureFocalY}%|"/>
+            </div>
+            <div class="dashboard-hero-main">
+                <div class="admin-hero-topline">
+                    <p class="eyebrow">Administrator</p>
+                    <div class="admin-maintenance-actions">
+                        <form class="inline-action" th:action="@{/admin/maintenance/backup}" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-maintenance">
+                                Run Backup + Cleanup
+                            </button>
+                        </form>
+                        <form class="inline-action"
+                              th:action="@{/admin/maintenance/restore}"
+                              method="post"
+                              onsubmit="return confirm('Restore backup now? This will overwrite current data with the last backup data. You may lose data if you don\'t have the latest backup data. Are you sure you want to proceed?');"                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-restore">
+                                Restore Backup
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <h1>Welcome to the admin workspace</h1>
+                <div class="admin-identity-row">
+                    <p class="lede"><strong sec:authentication="principal.fullName">Admin</strong>
+                        <span class="lede-email">(<span sec:authentication="name">email</span>)</span></p>
+                </div>
+                <ul class="checklist">
+                    <li>Approve registration requests and manage account lifecycle</li>
+                    <li>Configure catalog and borrowing policies</li>
+                    <li>Review operational reports</li>
+                </ul>
+                <p class="dashboard-actions admin-dashboard-actions-grid">
+                    <a class="btn btn-primary" th:href="@{/admin/registrations/pending}">Review Pending Registrations</a>
+                    <a class="btn btn-primary" th:href="@{/admin/users}">Manage User Accounts</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/overdue}">Overdue Report</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/issued}">Issued Books</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/fines}">Fine Report</a>
+                    <a class="btn btn-primary" th:href="@{/admin/reports/activity}">Activity Report</a>
+                </p>
+            </div>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+<script>
+    (() => {
+        const alerts = document.querySelectorAll(".alert");
+        if (!alerts.length) return;
+        window.setTimeout(() => {
+            alerts.forEach((el) => {
+                el.style.transition = "opacity 0.35s ease";
+                el.style.opacity = "0";
+                window.setTimeout(() => el.remove(), 400);
+            });
+        }, 7000);
+    })();
+</script>
+</body>
+</html>

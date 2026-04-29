@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Overdue Report — Admin')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main dashboard-main-wide">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/admin/dashboard}">Admin</a>
+        <span aria-hidden="true"> / </span>
+        <span>Overdue Report</span>
+    </nav>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Reports</p>
+        <h1>Overdue Loans</h1>
+
+        <div th:if="${#lists.isEmpty(overdueLoans)}" class="alert alert-success" role="status">
+            No overdue loans — all books are on time!
+        </div>
+
+        <div th:if="${!#lists.isEmpty(overdueLoans)}" class="alert alert-warn" role="alert"
+             th:text="${#lists.size(overdueLoans) + ' live overdue unreturned loan(s). Returned books are removed automatically.'}">Count</div>
+
+        <div class="table-wrap" th:if="${!#lists.isEmpty(overdueLoans)}">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Email</th>
+                    <th>Book</th>
+                    <th>Copy ISBN</th>
+                    <th>Due Date</th>
+                    <th>Days Overdue</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="loan : ${overdueLoans}" class="row-overdue">
+                    <td th:text="${loan.student.user.fullName}">Student</td>
+                    <td class="cell-mono" th:text="${loan.student.user.email}">email</td>
+                    <td>
+                        <div th:text="${loan.book.title}">Title</div>
+                        <div class="muted-note" th:text="${loan.book.author}">Author</div>
+                    </td>
+                    <td class="cell-mono" th:text="${loan.copy.isbnCode}">ISBN</td>
+                    <td th:text="${loan.dueDate}">2026-01-15</td>
+                    <td>
+                        <span class="status-pill status-pill--overdue"
+                              th:text="${T(java.time.temporal.ChronoUnit).DAYS.between(loan.dueDate, T(java.time.LocalDate).now()) + ' days'}">3 days</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="dashboard-actions" style="margin-top:1.5rem;">
+            <a th:href="@{/admin/reports/issued}" class="btn btn-outline">Issued Books →</a>
+            <a th:href="@{/admin/reports/fines}" class="btn btn-outline">Fine Report →</a>
+            <a th:href="@{/admin/reports/activity}" class="btn btn-outline">Activity Report →</a>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>

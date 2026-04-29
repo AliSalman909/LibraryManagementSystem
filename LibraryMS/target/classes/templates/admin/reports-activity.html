@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head (title='Activity Report — Admin')}"></head>
+<body class="page-dashboard">
+<header th:replace="~{fragments/layout :: site-header}"></header>
+<main class="container dashboard-main">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a th:href="@{/admin/dashboard}">Admin</a>
+        <span aria-hidden="true"> / </span>
+        <span>Activity Report</span>
+    </nav>
+
+    <section class="dashboard-hero card-elevated">
+        <p class="eyebrow">Reports</p>
+        <h1>User Activity Summary</h1>
+        <div class="report-cards" th:if="${activityReport != null}">
+            <div class="report-card report-card--accent">
+                <div class="report-card-label">Total Users</div>
+                <div class="report-card-value" th:text="${activityReport.totalUsers()}">0</div>
+            </div>
+            <div class="report-card report-card--success">
+                <div class="report-card-label">Active Loans</div>
+                <div class="report-card-value" th:text="${activityReport.activeLoans()}">0</div>
+            </div>
+            <div class="report-card report-card--muted">
+                <div class="report-card-label">Completed Loans</div>
+                <div class="report-card-value" th:text="${activityReport.completedLoans()}">0</div>
+            </div>
+            <div class="report-card report-card--warn">
+                <div class="report-card-label">Overdue Loans</div>
+                <div class="report-card-value" th:text="${activityReport.overdueLoans()}">0</div>
+            </div>
+            <div class="report-card report-card--accent">
+                <div class="report-card-label">Total Loans (All Time)</div>
+                <div class="report-card-value" th:text="${activityReport.totalLoans()}">0</div>
+            </div>
+        </div>
+
+        <div class="dashboard-actions" style="margin-top:1.5rem;">
+            <a th:href="@{/admin/reports/overdue}" class="btn btn-outline">Overdue Report →</a>
+            <a th:href="@{/admin/reports/issued}" class="btn btn-outline">Issued Books →</a>
+            <a th:href="@{/admin/reports/fines}" class="btn btn-outline">Fine Report →</a>
+        </div>
+    </section>
+</main>
+<footer th:replace="~{fragments/layout :: site-footer}"></footer>
+</body>
+</html>
