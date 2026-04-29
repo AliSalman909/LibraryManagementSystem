@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 
 /**
@@ -18,10 +17,7 @@ import java.time.Instant;
  * <p>Lifecycle: PENDING → READY (when a copy is returned) → FULFILLED / EXPIRED / CANCELLED.</p>
  */
 @Entity
-@Table(name = "reservations", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_reservation_student_book_active",
-                columnNames = {"student_id", "book_id", "status"})
-})
+@Table(name = "reservations")
 public class Reservation {
 
     @Id

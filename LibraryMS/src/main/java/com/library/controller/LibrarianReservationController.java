@@ -25,15 +25,24 @@ public class LibrarianReservationController {
 
     /**
      * Lists all reservations for librarian management.
-     * Supports filter: "ready" (default) or "all".
+     * Supports filter: "ready" (default), "expired", or "all".
      */
     @GetMapping("/librarian/reservations")
     public String listReservations(
             @RequestParam(name = "filter", defaultValue = "ready") String filter,
             Model model) {
-        boolean showAll = "all".equalsIgnoreCase(filter);
-        model.addAttribute("reservations", showAll ? reservationService.listAll() : reservationService.listReady());
-        model.addAttribute("filter", showAll ? "all" : "ready");
+        String normalizedFilter = filter == null ? "ready" : filter.toLowerCase();
+        if (!"all".equals(normalizedFilter) && !"expired".equals(normalizedFilter)) {
+            normalizedFilter = "ready";
+        }
+        model.addAttribute(
+                "reservations",
+                "all".equals(normalizedFilter)
+                        ? reservationService.listAll()
+                        : "expired".equals(normalizedFilter)
+                                ? reservationService.listExpired()
+                                : reservationService.listReady());
+        model.addAttribute("filter", normalizedFilter);
         return "librarian/reservations";
     }
 
@@ -76,12 +85,4 @@ public class LibrarianReservationController {
         return "redirect:/librarian/reservations";
     }
 
-    /** Expire all overdue READY reservations whose pickup window has passed. */
-    @PostMapping("/librarian/reservations/expire-overdue")
-    public String expireOverdue(RedirectAttributes redirectAttributes) {
-        int count = reservationService.expireOverdueReservations();
-        redirectAttributes.addFlashAttribute("flashSuccess",
-                count == 0 ? "No expired reservations found." : count + " reservation(s) marked as expired.");
-        return "redirect:/librarian/reservations";
-    }
 }

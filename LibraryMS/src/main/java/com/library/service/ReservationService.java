@@ -43,6 +43,7 @@ public class ReservationService {
             List.of(ReservationStatus.PENDING, ReservationStatus.READY);
     private static final List<Integer> SUPPORTED_DURATIONS = List.of(7, 14, 21, 28);
     private static final int DEFAULT_DURATION_DAYS = 14;
+    private static final int MAX_PICKUP_WINDOW_HOURS = 96; // 4 days
 
     @Value("${app.reservation.pickup-window-hours:48}")
     private int pickupWindowHours;
@@ -85,7 +86,7 @@ public class ReservationService {
                 .orElseThrow(() -> new BusinessRuleException("Student account not found."));
 
         @SuppressWarnings("null")
-        Book book = bookRepository.findById(bookId)
+        Book book = bookRepository.findByIdForUpdate(bookId)
                 .orElseThrow(() -> new BusinessRuleException("Book not found."));
 
         // Must be unavailable to reserve
@@ -114,7 +115,9 @@ public class ReservationService {
         reservation.setQueuePosition(nextPosition);
         reservation.setRequestedDurationDays(normalizeRequestedDuration(durationDays, book.getMaxBorrowDays()));
         reservation.setCreatedAt(Instant.now());
-        return reservationRepository.save(reservation);
+        Reservation saved = reservationRepository.save(reservation);
+        resequencePendingQueue(bookId);
+        return saved;
     }
 
     /**
@@ -132,9 +135,11 @@ public class ReservationService {
             reservation.getStatus() != ReservationStatus.READY) {
             throw new BusinessRuleException("Only pending or ready reservations can be cancelled.");
         }
-        removeOlderSameStatusRows(reservation, ReservationStatus.CANCELLED);
         reservation.setStatus(ReservationStatus.CANCELLED);
+        reservation.setNotifiedAt(null);
+        reservation.setExpiresAt(null);
         reservationRepository.save(reservation);
+        resequencePendingQueue(reservation.getBook().getBookId());
     }
 
     // -----------------------------------------------------------------------
@@ -257,10 +262,10 @@ public class ReservationService {
         record.setDueDate(dueDate);
         borrowRecordRepository.save(record);
 
-        removeOlderSameStatusRows(reservation, ReservationStatus.FULFILLED);
         reservation.setStatus(ReservationStatus.FULFILLED);
         reservation.setFulfilledAt(Instant.now());
         reservationRepository.save(reservation);
+        resequencePendingQueue(reservation.getBook().getBookId());
     }
 
     @Transactional
@@ -273,9 +278,11 @@ public class ReservationService {
             throw new BusinessRuleException("Cannot cancel a reservation that is already " +
                     reservation.getStatus().name().toLowerCase() + ".");
         }
-        removeOlderSameStatusRows(reservation, ReservationStatus.CANCELLED);
         reservation.setStatus(ReservationStatus.CANCELLED);
+        reservation.setNotifiedAt(null);
+        reservation.setExpiresAt(null);
         reservationRepository.save(reservation);
+        resequencePendingQueue(reservation.getBook().getBookId());
     }
 
     /**
@@ -287,10 +294,14 @@ public class ReservationService {
     public int expireOverdueReservations() {
         List<Reservation> expired = reservationRepository.findExpiredReady(Instant.now());
         for (Reservation r : expired) {
-            removeOlderSameStatusRows(r, ReservationStatus.EXPIRED);
             r.setStatus(ReservationStatus.EXPIRED);
+            r.setNotifiedAt(null);
+            r.setExpiresAt(null);
         }
         reservationRepository.saveAll(expired);
+        for (Reservation r : expired) {
+            resequencePendingQueue(r.getBook().getBookId());
+        }
         return expired.size();
     }
 
@@ -307,13 +318,17 @@ public class ReservationService {
         for (Reservation reservation : active) {
             Instant expiry = resolveReservationExpiryInstant(reservation);
             if (expiry != null && now.isAfter(expiry)) {
-                removeOlderSameStatusRows(reservation, ReservationStatus.CANCELLED);
-                reservation.setStatus(ReservationStatus.CANCELLED);
+                reservation.setStatus(ReservationStatus.EXPIRED);
                 reservation.setNotifiedAt(null);
                 reservation.setExpiresAt(null);
             }
         }
         reservationRepository.saveAll(java.util.Objects.requireNonNull(active));
+        for (Reservation reservation : active) {
+            if (reservation.getStatus() == ReservationStatus.EXPIRED) {
+                resequencePendingQueue(reservation.getBook().getBookId());
+            }
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -336,6 +351,12 @@ public class ReservationService {
     public List<Reservation> listReady() {
         reconcileAllActiveReservationBooks();
         return reservationRepository.findAllReadyWithDetails();
+    }
+
+    @Transactional
+    public List<Reservation> listExpired() {
+        reconcileAllActiveReservationBooks();
+        return reservationRepository.findAllExpiredWithDetails();
     }
 
     /**
@@ -371,10 +392,12 @@ public class ReservationService {
         }
         Reservation next = pending.get(0);
         Instant now = Instant.now();
+        int effectivePickupWindowHours = Math.max(1, Math.min(pickupWindowHours, MAX_PICKUP_WINDOW_HOURS));
         next.setStatus(ReservationStatus.READY);
         next.setNotifiedAt(now);
-        next.setExpiresAt(now.plus(pickupWindowHours, ChronoUnit.HOURS));
+        next.setExpiresAt(now.plus(effectivePickupWindowHours, ChronoUnit.HOURS));
         reservationRepository.save(next);
+        resequencePendingQueue(bookId);
     }
 
     private void reconcileAllActiveReservationBooks() {
@@ -418,11 +441,25 @@ public class ReservationService {
         return expiresOn.plusDays(1).atStartOfDay(ZoneId.systemDefault()).minusSeconds(1).toInstant();
     }
 
-    private void removeOlderSameStatusRows(Reservation current, ReservationStatus targetStatus) {
-        reservationRepository.deleteByStudentUserIdAndBookBookIdAndStatusAndReservationIdNot(
-                current.getStudent().getUserId(),
-                current.getBook().getBookId(),
-                targetStatus,
-                current.getReservationId());
+    private void resequencePendingQueue(String bookId) {
+        // Serialize queue renumbering per book to prevent concurrent duplicate positions.
+        bookRepository.findByIdForUpdate(bookId)
+                .orElseThrow(() -> new BusinessRuleException("Book not found."));
+        List<Reservation> activeReservations = reservationRepository.findActiveByBookOrderByQueueForUpdate(bookId);
+        if (activeReservations.isEmpty()) {
+            return;
+        }
+        int position = 1;
+        boolean changed = false;
+        for (Reservation reservation : activeReservations) {
+            if (reservation.getQueuePosition() != position) {
+                reservation.setQueuePosition(position);
+                changed = true;
+            }
+            position++;
+        }
+        if (changed) {
+            reservationRepository.saveAll(activeReservations);
+        }
     }
 }

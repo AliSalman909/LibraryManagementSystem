@@ -7,17 +7,26 @@ import java.time.Instant;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ReservationRepository extends JpaRepository<Reservation, String> {
     List<Reservation> findByStatusIn(List<ReservationStatus> statuses);
 
-    long deleteByStudentUserIdAndBookBookIdAndStatusAndReservationIdNot(
-            String studentUserId,
-            String bookId,
-            ReservationStatus status,
-            String reservationId);
+    @Modifying
+    @Query("""
+            delete from Reservation r
+            where r.student.userId = :studentUserId
+              and r.book.bookId = :bookId
+              and r.status = :status
+              and r.reservationId <> :reservationId
+            """)
+    long deleteOtherByStudentBookAndStatus(
+            @Param("studentUserId") String studentUserId,
+            @Param("bookId") String bookId,
+            @Param("status") ReservationStatus status,
+            @Param("reservationId") String reservationId);
 
     /**
      * Find the next PENDING reservation for a book (lowest queue_position first).
@@ -165,6 +174,42 @@ public interface ReservationRepository extends JpaRepository<Reservation, String
             @Param("bookId") String bookId,
             @Param("fromInclusive") Instant fromInclusive,
             @Param("toInclusive") Instant toInclusive);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.book.bookId = :bookId
+              and r.status = 'PENDING'
+            order by r.queuePosition asc
+            """)
+    List<Reservation> findPendingByBookOrderByPositionForUpdate(@Param("bookId") String bookId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            where r.book.bookId = :bookId
+              and r.status in ('PENDING', 'READY')
+            order by
+                case
+                    when r.status = 'READY' then 0
+                    else 1
+                end asc,
+                r.queuePosition asc,
+                r.createdAt asc
+            """)
+    List<Reservation> findActiveByBookOrderByQueueForUpdate(@Param("bookId") String bookId);
+
+    @Query("""
+            select r from Reservation r
+            join fetch r.book b
+            join fetch r.student s
+            join fetch s.user
+            where r.status = 'EXPIRED'
+            order by r.createdAt desc
+            """)
+    List<Reservation> findAllExpiredWithDetails();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

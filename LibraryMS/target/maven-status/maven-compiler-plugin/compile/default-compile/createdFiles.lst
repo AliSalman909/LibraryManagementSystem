@@ -50,6 +50,7 @@ com\library\service\BorrowRequestService.class
 com\library\controller\HomeController.class
 com\library\controller\AdminRegistrationController.class
 com\library\entity\enums\AccountStatus.class
+com\library\service\ReservationSchemaMigrationService.class
 com\library\service\RegistrationApprovalService.class
 com\library\entity\DeletionRequest.class
 com\library\repository\DeletionRequestRepository.class

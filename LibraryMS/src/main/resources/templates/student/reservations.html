@@ -55,6 +55,9 @@
                     <td data-label="Deadline">
                         <span th:if="${res.expiresAt != null}" th:text="${#temporals.format(res.expiresAt, 'yyyy-MM-dd HH:mm', #locale)}">2026-01-03 12:00</span>
                         <span th:if="${res.expiresAt == null}" class="muted-note">—</span>
+                        <div th:if="${res.status.name() == 'READY' and res.expiresAt != null}" class="muted-note">
+                            Auto-expires at this time if not picked up.
+                        </div>
                     </td>
                     <td class="actions-cell">
                         <th:block th:if="${res.status.name() == 'PENDING' or res.status.name() == 'READY'}">

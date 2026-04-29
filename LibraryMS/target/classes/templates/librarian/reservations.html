@@ -16,7 +16,7 @@
     <section class="dashboard-hero card-elevated">
         <p class="eyebrow">Waitlist</p>
         <h1>Reservation Queue</h1>
-        <p class="lede">Manage reservations in first-come, first-served order. Grant only when a copy is available; otherwise the system will block the action.</p>
+        <p class="lede">Manage reservations in first-come, first-served order. READY reservations are expired automatically if not picked up within 4 days.</p>
 
         <!-- Filter tabs -->
         <div class="dashboard-actions" style="margin-bottom:1rem;">
@@ -26,12 +26,9 @@
             <a th:href="@{/librarian/reservations(filter='all')}"
                th:classappend="${filter == 'all'} ? ' btn-primary' : ' btn-outline'"
                class="btn btn-sm">All Reservations</a>
-            <!-- Expire overdue -->
-            <form class="inline-action" th:action="@{/librarian/reservations/expire-overdue}" method="post"
-                  style="margin-left:auto;">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button type="submit" class="btn btn-outline btn-sm">Expire Overdue</button>
-            </form>
+            <a th:href="@{/librarian/reservations(filter='expired')}"
+               th:classappend="${filter == 'expired'} ? ' btn-primary' : ' btn-outline'"
+               class="btn btn-sm">Expired Only</a>
         </div>
 
         <div class="table-wrap">
