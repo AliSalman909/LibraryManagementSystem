@@ -1,6 +1,7 @@
 package com.library.service;
 
 import jakarta.annotation.PostConstruct;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -44,11 +45,13 @@ public class ReservationSchemaMigrationService {
                 log.info("Dropping unique reservation index {} to preserve status history.", UNIQUE_INDEX_NAME);
                 jdbcTemplate.execute("alter table reservations drop index " + UNIQUE_INDEX_NAME);
             } catch (DataAccessException ex) {
+                Throwable rootCause = ex.getMostSpecificCause();
+                String causeMessage = rootCause != null ? rootCause.getMessage() : ex.getMessage();
                 log.warn(
                         "Could not drop reservation unique index {} automatically ({}). "
                                 + "App will continue; run manual DB migration if status-history conflicts persist.",
                         UNIQUE_INDEX_NAME,
-                        ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage());
+                        causeMessage);
             }
         }
 
@@ -70,7 +73,7 @@ public class ReservationSchemaMigrationService {
                 rs -> rs.next() ? rs.getInt(1) : 0);
 
         if (count == null || count == 0) {
-            jdbcTemplate.execute(createSql);
+            jdbcTemplate.execute(Objects.requireNonNull(createSql));
         }
     }
 }

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -85,7 +86,6 @@ public class ReservationService {
         Student student = studentRepository.findByUserIdWithUser(studentUserId)
                 .orElseThrow(() -> new BusinessRuleException("Student account not found."));
 
-        @SuppressWarnings("null")
         Book book = bookRepository.findByIdForUpdate(bookId)
                 .orElseThrow(() -> new BusinessRuleException("Book not found."));
 
@@ -125,8 +125,7 @@ public class ReservationService {
      */
     @Transactional
     public void cancelByStudent(String reservationId, String studentUserId) {
-        @SuppressWarnings("null")
-        Reservation reservation = reservationRepository.findById(reservationId)
+        Reservation reservation = reservationRepository.findById(Objects.requireNonNull(reservationId))
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found."));
         if (!reservation.getStudent().getUserId().equals(studentUserId)) {
             throw new BusinessRuleException("You can only cancel your own reservations.");
@@ -193,8 +192,7 @@ public class ReservationService {
 
     @Transactional
     public void markFulfilled(String reservationId, String librarianUserId) {
-        @SuppressWarnings("null")
-        Reservation reservation = reservationRepository.findById(reservationId)
+        Reservation reservation = reservationRepository.findById(Objects.requireNonNull(reservationId))
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found."));
         if (reservation.getStatus() != ReservationStatus.READY) {
             throw new BusinessRuleException("Only READY reservations can be marked as fulfilled.");
@@ -270,8 +268,7 @@ public class ReservationService {
 
     @Transactional
     public void cancelByLibrarian(String reservationId) {
-        @SuppressWarnings("null")
-        Reservation reservation = reservationRepository.findById(reservationId)
+        Reservation reservation = reservationRepository.findById(Objects.requireNonNull(reservationId))
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found."));
         if (reservation.getStatus() == ReservationStatus.FULFILLED ||
             reservation.getStatus() == ReservationStatus.EXPIRED) {
@@ -289,7 +286,6 @@ public class ReservationService {
      * Expire all READY reservations whose pickup window has passed.
      * Can be called from a scheduled job or manually.
      */
-    @SuppressWarnings("null")
     @Transactional
     public int expireOverdueReservations() {
         List<Reservation> expired = reservationRepository.findExpiredReady(Instant.now());
@@ -298,7 +294,7 @@ public class ReservationService {
             r.setNotifiedAt(null);
             r.setExpiresAt(null);
         }
-        reservationRepository.saveAll(expired);
+        reservationRepository.saveAll(Objects.requireNonNull(expired));
         for (Reservation r : expired) {
             resequencePendingQueue(r.getBook().getBookId());
         }

@@ -1472,3 +1472,161 @@ tr.row-overdue td {
 }
 .report-card--muted .report-card-label { color: var(--muted); }
 .report-card--muted .report-card-value { color: var(--muted); }
+
+/* ============================================================
+   Global responsive hardening (all portals)
+   ============================================================ */
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+.table-wrap .data-table td:not([data-label])::before {
+    display: none;
+    content: "";
+}
+
+@media (max-width: 1024px) {
+    .container {
+        width: min(100%, 100% - 1.25rem);
+    }
+
+    .page-dashboard .dashboard-main.dashboard-main-wide {
+        padding: 0.9rem 0.6rem 1.25rem;
+    }
+
+    .page-dashboard .dashboard-main.dashboard-main-wide .dashboard-hero,
+    .dashboard-hero {
+        padding: 1.35rem 1rem;
+    }
+
+    .lede {
+        max-width: 100%;
+        font-size: 1.05rem;
+    }
+
+    .dashboard-actions {
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 760px) {
+    .site-header {
+        position: static;
+    }
+
+    .header-inner {
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .brand {
+        font-size: 1.15rem;
+    }
+
+    .nav-links {
+        width: 100%;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .nav-user-block {
+        align-items: flex-start;
+        text-align: left;
+        max-width: calc(100vw - 8.5rem);
+    }
+
+    .dashboard-hero-layout {
+        gap: 0.9rem;
+    }
+
+    .dashboard-profile-slot {
+        width: clamp(4.75rem, 22vw, 6.25rem);
+        height: clamp(4.75rem, 22vw, 6.25rem);
+    }
+
+    .dashboard-actions .btn,
+    .dashboard-actions .inline-action,
+    .status-inline-form,
+    .actions-cell .inline-action,
+    .actions-cell .status-inline-form,
+    .actions-cell .reject-form,
+    .renew-form {
+        width: 100%;
+    }
+
+    .dashboard-actions .btn,
+    .actions-cell .btn,
+    .status-inline-form .btn,
+    .renew-form .btn {
+        min-height: 2.4rem;
+    }
+
+    .status-inline-form,
+    .actions-cell .reject-form {
+        margin-right: 0;
+    }
+
+    .student-books-search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .student-books-search-form .btn,
+    .student-books-search-form .btn-ghost,
+    .student-books-search-form .btn-outline {
+        width: 100%;
+    }
+}
+
+@media (max-width: 560px) {
+    html {
+        font-size: 15px;
+    }
+
+    .container {
+        width: min(100%, 100% - 0.8rem);
+    }
+
+    .page-dashboard .dashboard-main {
+        padding: 0.9rem 0.25rem 1.1rem;
+    }
+
+    .dashboard-hero {
+        border-radius: 10px;
+        padding: 1rem 0.75rem;
+    }
+
+    .eyebrow {
+        font-size: 1.1rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.9rem;
+    }
+
+    .data-table td {
+        gap: 0.45rem;
+    }
+
+    .data-table td::before {
+        min-width: 6.25rem;
+        font-size: 0.73rem;
+    }
+
+    .btn,
+    .btn-sm {
+        padding: 0.55rem 0.7rem;
+    }
+
+    .input,
+    .input-sm,
+    .renew-select,
+    .fine-notes-input {
+        font-size: 0.95rem;
+    }
+}
