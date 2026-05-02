@@ -24,7 +24,7 @@
         field.setAttribute("data-lpignore", "true");
         field.setAttribute("data-1p-ignore", "true");
         field.setAttribute("data-form-type", "other");
-        if (field.matches("input")) {
+        if (field.matches("input") && field.type !== "file") {
             armReadonlyGuard(field);
         }
     }

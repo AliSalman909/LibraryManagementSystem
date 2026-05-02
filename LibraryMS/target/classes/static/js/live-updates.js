@@ -47,9 +47,12 @@
 
     function shouldRunOnThisPage() {
         const path = window.location.pathname || "";
-        // Avoid interrupting auth forms unless user left them idle with no edits.
-        // Student books has its own targeted table refresh logic.
-        return !path.startsWith("/error") && path !== "/student/books";
+        if (path.startsWith("/error")) return false;
+        if (path === "/student/books") return false;
+        // Auth pages: polling replaces <main> when innerHTML differs from a fresh fetch.
+        // Local-only UI (e.g. profile photo blob preview) would be wiped every poll cycle.
+        if (path === "/login" || path === "/register" || path.startsWith("/register/")) return false;
+        return true;
     }
 
     function pollIntervalForPath() {

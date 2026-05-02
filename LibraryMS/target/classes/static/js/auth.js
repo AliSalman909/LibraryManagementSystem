@@ -55,6 +55,18 @@
         return Math.max(1, Math.round(bytes / (1024 * 1024))) + " MB";
     }
 
+    /** Some browsers leave type empty or use octet-stream for camera / disk picks. */
+    function isLikelyImageFile(file) {
+        if (!file) return false;
+        var t = (file.type || "").toLowerCase();
+        if (t.indexOf("image/") === 0) return true;
+        if (t === "application/octet-stream" || t === "") {
+            var n = (file.name || "").toLowerCase();
+            return /\.(jpe?g|png|gif|webp)$/i.test(n);
+        }
+        return false;
+    }
+
     var regForm = document.getElementById("register-form");
     if (regForm) {
         regForm.addEventListener("submit", function (e) {
@@ -98,6 +110,15 @@
     var profileSizeError = document.getElementById("profilePictureSizeError");
     var focalXInput = document.getElementById("profilePictureFocalX");
     var focalYInput = document.getElementById("profilePictureFocalY");
+    function showProfilePreview() {
+        if (!profilePreview) return;
+        profilePreview.hidden = false;
+        profilePreview.removeAttribute("hidden");
+    }
+    function hideProfilePreview() {
+        if (!profilePreview) return;
+        profilePreview.hidden = true;
+    }
     var profilePreviewUrl = null;
     var focalX = 50;
     var focalY = 50;
@@ -146,7 +167,7 @@
             URL.revokeObjectURL(profilePreviewUrl);
             profilePreviewUrl = null;
         }
-        if (profilePreview) profilePreview.hidden = true;
+        hideProfilePreview();
         if (profilePanHint) profilePanHint.hidden = true;
         if (profilePreviewImg) profilePreviewImg.removeAttribute("src");
         resetProfileFocal();
@@ -160,8 +181,8 @@
                 profilePreviewUrl = null;
             }
             var file = profileInput.files && profileInput.files[0];
-            if (!file || !file.type || file.type.indexOf("image/") !== 0) {
-                profilePreview.hidden = true;
+            if (!file || !isLikelyImageFile(file)) {
+                hideProfilePreview();
                 if (profilePanHint) profilePanHint.hidden = true;
                 profilePreviewImg.removeAttribute("src");
                 resetProfileFocal();
@@ -174,13 +195,14 @@
             }
             profilePreviewUrl = URL.createObjectURL(file);
             profilePreviewImg.src = profilePreviewUrl;
-            profilePreview.hidden = false;
+            showProfilePreview();
             if (profilePanHint) profilePanHint.hidden = false;
             resetProfileFocal();
         });
 
         profilePreview.addEventListener("pointerdown", function (e) {
             if (profilePreview.hidden || e.button !== 0) return;
+            e.preventDefault();
             panDragging = true;
             panLastX = e.clientX;
             panLastY = e.clientY;
